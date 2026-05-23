@@ -25,23 +25,10 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
     deadline:        initialData?.deadline ?? "",
   });
 
-  // Task list state for image projects
-  const [taskInput, setTaskInput] = useState("");
-  const [tasks, setTasks]         = useState(initialData?.tasks?.map(t => t.label) ?? []);
+
 
   const field = (key, value) =>
     setFormData((prev) => ({ ...prev, [key]: value }));
-
-  const handleAddTask = () => {
-    const trimmed = taskInput.trim();
-    if (!trimmed) return;
-    setTasks((prev) => [...prev, trimmed]);
-    setTaskInput("");
-  };
-
-  const handleRemoveTask = (index) => {
-    setTasks((prev) => prev.filter((_, i) => i !== index));
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -50,14 +37,18 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
       maxDurationMins: parseInt(formData.maxDurationMins) || 0,
       maxDurationSecs: parseInt(formData.maxDurationSecs) || 0,
       maxRevisions:    parseInt(formData.maxRevisions)    || 3,
-      tasks,
+      tasks: [],
     });
   };
 
   const isVideo    = formData.projectType === "video";
   const totalSecs  = (parseInt(formData.maxDurationMins) || 0) * 60
                    + (parseInt(formData.maxDurationSecs) || 0);
-  const canSubmit  = isVideo ? totalSecs > 0 : tasks.length > 0;
+  const baseFieldsFilled =
+    formData.name.trim() !== "" &&
+    formData.client.trim() !== "" &&
+    formData.deadline !== "";
+  const canSubmit = baseFieldsFilled && (isVideo ? totalSecs > 0 : true);
 
   return (
     <div
@@ -242,85 +233,7 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
             </div>
           )}
 
-          {/* ── IMAGE: revision checklist tasks ── */}
-          {!isVideo && (
-            <div className="form-group">
-              <label className="form-label">Requests</label>
-              <span className="form-hint" style={{ marginBottom: "var(--space-2)", display: "block" }}>
-                Add tasks the editor must complete before uploading the final image.
-              </span>
 
-              {/* Add task input */}
-              <div style={{ display: "flex", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
-                <input
-                  className="form-input"
-                  type="text"
-                  placeholder="e.g. Color grading"
-                  value={taskInput}
-                  onChange={(e) => setTaskInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTask())}
-                  style={{ flex: 1 }}
-                />
-                <button
-                  type="button"
-                  className="btn btn--primary"
-                  onClick={handleAddTask}
-                  style={{ height: 40, paddingLeft: "var(--space-4)", paddingRight: "var(--space-4)" }}
-                >
-                  Add
-                </button>
-              </div>
-
-              {/* Task list */}
-              {tasks.length === 0 ? (
-                <p style={{
-                  fontSize: "var(--text-xs)", color: "var(--color-text-muted)",
-                  fontStyle: "italic", textAlign: "center", padding: "var(--space-3)",
-                  background: "var(--color-bg-surface-alt)", borderRadius: "var(--radius-md)",
-                }}>
-                  No tasks yet. Add at least one to proceed.
-                </p>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-                  {tasks.map((task, i) => (
-                    <div key={i} style={{
-                      display:        "flex",
-                      alignItems:     "center",
-                      justifyContent: "space-between",
-                      padding:        "var(--space-2) var(--space-3)",
-                      background:     "var(--color-bg-surface-alt)",
-                      borderRadius:   "var(--radius-md)",
-                      border:         "1px solid var(--color-border-default)",
-                    }}>
-                      <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-primary)" }}>
-                        {i + 1}. {task}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTask(i)}
-                        style={{
-                          color:    "var(--color-text-muted)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor:   "pointer",
-                          padding:  "var(--space-1)",
-                        }}
-                        aria-label={`Remove task: ${task}`}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                          stroke="currentColor" strokeWidth="2"
-                          strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
 
           <div className="modal__footer">
             <button type="button" className="btn btn--ghost" onClick={onClose}>

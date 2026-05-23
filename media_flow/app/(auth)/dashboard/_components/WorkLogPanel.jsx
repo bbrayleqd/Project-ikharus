@@ -174,7 +174,14 @@ export default function WorkLogPanel({
       {workLog.length > 0 && (
         <div className="card" style={{ padding: "var(--space-5)" }}>
           <p className="card-section-label">Session history</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+          <div style={{
+            display:   "flex",
+            flexDirection: "column",
+            gap:       "var(--space-2)",
+            maxHeight: "220px",
+            overflowY: "auto",
+            paddingRight: "var(--space-1)",
+          }}>
             {workLog.map((entry) => (
               <div
                 key={entry.id}
