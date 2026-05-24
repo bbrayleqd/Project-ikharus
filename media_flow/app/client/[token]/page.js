@@ -1,14 +1,14 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useCallback } from "react";
 import { useTheme }                  from "../../theme-provider";
 import { db }                        from "../../lib/firebase";
 import {
-  doc, getDoc,
+  doc, getDoc, updateDoc,
   collection, addDoc,
   onSnapshot, query,
   orderBy, serverTimestamp,
-}                                    from "firebase/firestore";
+} from "firebase/firestore";
 import ImageAnnotator from "./_components/ImageAnnotator";
 import VideoAnnotator from "./_components/VideoAnnotator";
 
@@ -17,14 +17,10 @@ function SunIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="5"/>
-      <line x1="12" y1="1" x2="12" y2="3"/>
-      <line x1="12" y1="21" x2="12" y2="23"/>
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-      <line x1="1" y1="12" x2="3" y2="12"/>
-      <line x1="21" y1="12" x2="23" y2="12"/>
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+      <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/>
+      <line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/>
+      <line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
       <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
     </svg>
   );
@@ -39,26 +35,199 @@ function MoonIcon() {
   );
 }
 
+function DownloadIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+  );
+}
+
+function CheckCircleIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+      <polyline points="22 4 12 14.01 9 11.01"/>
+    </svg>
+  );
+}
+
+function ProgressRing({ progress = 0, size = 52, stroke = 4 }) {
+  const clamped = Math.min(100, Math.max(0, progress));
+  const r       = (size - stroke * 2) / 2;
+  const circ    = 2 * Math.PI * r;
+  const offset  = circ - (clamped / 100) * circ;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
+      style={{ transform: "rotate(-90deg)" }}>
+      <circle
+        cx={size / 2} cy={size / 2} r={r}
+        fill="none" stroke="var(--color-border-default)" strokeWidth={stroke}
+      />
+      <circle
+        cx={size / 2} cy={size / 2} r={r}
+        fill="none" stroke="var(--color-primary)" strokeWidth={stroke}
+        strokeDasharray={circ} strokeDashoffset={offset}
+        strokeLinecap="round"
+        style={{ transition: "stroke-dashoffset 0.4s ease" }}
+      />
+    </svg>
+  );
+}
+
+/* -- Confirm Modal -------------------------------------------------------- */
+function ConfirmSubmitModal({ annotationCount, onConfirm, onCancel }) {
+  return (
+    <div style={{
+      position:       "fixed",
+      inset:          0,
+      background:     "rgba(0,0,0,0.55)",
+      display:        "flex",
+      alignItems:     "center",
+      justifyContent: "center",
+      zIndex:         999,
+      padding:        "var(--space-4)",
+    }}>
+      <div style={{
+        background:   "var(--color-bg-surface)",
+        borderRadius: "var(--radius-xl)",
+        border:       "1px solid var(--color-border-default)",
+        padding:      "var(--space-7)",
+        maxWidth:     420,
+        width:        "100%",
+        display:      "flex",
+        flexDirection:"column",
+        gap:          "var(--space-4)",
+        boxShadow:    "0 24px 64px rgba(0,0,0,0.3)",
+      }}>
+        <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "flex-start" }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: "var(--radius-full)",
+            background: "rgba(234,88,12,0.12)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="#EA580C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div>
+            <p style={{ fontWeight: "var(--font-semibold)", color: "var(--color-text-primary)", fontSize: "var(--text-base)", marginBottom: "var(--space-1)" }}>
+              Submit feedback?
+            </p>
+            <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)", lineHeight: "1.55" }}>
+              You have <strong>{annotationCount}</strong> annotation{annotationCount !== 1 ? "s" : ""} ready to submit.
+              Once submitted, <strong>you cannot add more annotations</strong> until your editor uploads the next revision.
+            </p>
+          </div>
+        </div>
+
+        <div style={{
+          background:   "rgba(234,88,12,0.08)",
+          border:       "1px solid rgba(234,88,12,0.25)",
+          borderRadius: "var(--radius-md)",
+          padding:      "var(--space-3) var(--space-4)",
+          fontSize:     "var(--text-xs)",
+          color:        "#EA580C",
+          fontWeight:   "var(--font-medium)",
+        }}>
+          ⚠️ After submitting, annotation tools will be locked until the next draft is uploaded.
+        </div>
+
+        <div style={{ display: "flex", gap: "var(--space-3)", justifyContent: "flex-end" }}>
+          <button className="btn btn--ghost" onClick={onCancel}>
+            Cancel
+          </button>
+          <button
+            className="btn btn--primary"
+            onClick={onConfirm}
+            style={{ background: "#EA580C", borderColor: "#EA580C" }}
+          >
+            Yes, submit feedback
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* -- Mark Final Modal -------------------------------------------------------- */
+function MarkFinalModal({ onConfirm, onCancel }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0,
+      background: "rgba(0,0,0,0.55)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 999, padding: "var(--space-4)",
+    }}>
+      <div style={{
+        background: "var(--color-bg-surface)", borderRadius: "var(--radius-xl)",
+        border: "1px solid var(--color-border-default)", padding: "var(--space-7)",
+        maxWidth: 400, width: "100%", display: "flex", flexDirection: "column",
+        gap: "var(--space-4)", boxShadow: "0 24px 64px rgba(0,0,0,0.3)",
+      }}>
+        <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "flex-start" }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: "var(--radius-full)",
+            background: "rgba(16,185,129,0.12)",
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>
+            <CheckCircleIcon />
+          </div>
+          <div>
+            <p style={{ fontWeight: "var(--font-semibold)", color: "var(--color-text-primary)", fontSize: "var(--text-base)", marginBottom: "var(--space-1)" }}>
+              Mark as final?
+            </p>
+            <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)", lineHeight: "1.55" }}>
+              This confirms you're happy with this draft. You'll be able to <strong>download the file</strong> once marked as final. This action cannot be undone.
+            </p>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: "var(--space-3)", justifyContent: "flex-end" }}>
+          <button className="btn btn--ghost" onClick={onCancel}>Cancel</button>
+          <button className="btn btn--primary" onClick={onConfirm}
+            style={{ background: "#10B981", borderColor: "#10B981" }}>
+            ✓ Mark as final
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* -- Page ----------------------------------------------------------------- */
 export default function ClientReviewPage({ params }) {
   const { token }                    = use(params);
   const { darkMode, toggleDarkMode } = useTheme();
 
-  const [tokenData,    setTokenData]    = useState(null);  // data from tokens/{token}
-  const [annotations,  setAnnotations]  = useState([]);
-  const [status,       setStatus]       = useState("loading"); // loading | ready | invalid
-  const [submitted,    setSubmitted]    = useState(false);
+  const [tokenData,         setTokenData]         = useState(null);
+  const [projectData,       setProjectData]        = useState(null);
+  const [annotations,       setAnnotations]        = useState([]);
+  const [status,            setStatus]             = useState("loading");
+  const [submitted,         setSubmitted]          = useState(false);
+  const [showConfirmModal,  setShowConfirmModal]   = useState(false);
+  const [showFinalModal,    setShowFinalModal]     = useState(false);
+  const [isFinal,           setIsFinal]            = useState(false);
+  const [currentRevision,   setCurrentRevision]    = useState(1);
 
   /* -- Load token doc from Firestore ------------------------------------ */
   useEffect(() => {
     async function loadToken() {
       try {
         const snap = await getDoc(doc(db, "tokens", token));
-        if (!snap.exists()) {
-          setStatus("invalid");
-          return;
-        }
-        setTokenData(snap.data());
+        if (!snap.exists()) { setStatus("invalid"); return; }
+        const data = snap.data();
+        setTokenData(data);
+        setSubmitted(!!data.clientSubmittedAt);
+        setIsFinal(!!data.markedFinal);
+        setCurrentRevision(data.currentRevision ?? 1);
+
         setStatus("ready");
       } catch (err) {
         console.error("Token load error:", err);
@@ -68,43 +237,101 @@ export default function ClientReviewPage({ params }) {
     loadToken();
   }, [token]);
 
+  /* -- Subscribe to project doc in real-time (progress, mediaUrl, etc.) - */
+  useEffect(() => {
+    if (!tokenData?.projectId) return;
+    const unsub = onSnapshot(doc(db, "projects", tokenData.projectId), (snap) => {
+      if (snap.exists()) setProjectData({ id: snap.id, ...snap.data() });
+    });
+    return () => unsub();
+  }, [tokenData?.projectId]);
+
   /* -- Subscribe to annotations in real-time ---------------------------- */
   useEffect(() => {
     if (!tokenData?.projectId) return;
-
     const q = query(
       collection(db, "projects", tokenData.projectId, "annotations"),
       orderBy("createdAt", "asc")
     );
-
     const unsub = onSnapshot(q, (snap) => {
       setAnnotations(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
-
     return () => unsub();
   }, [tokenData?.projectId]);
 
+  /* -- Current revision annotations (only this round) ------------------- */
+  const currentRevisionAnnotations = annotations.filter(
+    (a) => (a.revision ?? 1) === currentRevision
+  );
+
   /* -- Save annotation to Firestore ------------------------------------- */
   const handleAnnotationSave = async (annotation) => {
-    if (!tokenData?.projectId) return;
+    if (!tokenData?.projectId || submitted || isFinal) return;
     await addDoc(
       collection(db, "projects", tokenData.projectId, "annotations"),
       {
         ...annotation,
-        token:     token,
+        token,
+        revision:  currentRevision,
         createdAt: serverTimestamp(),
       }
     );
-    // onSnapshot above updates annotations automatically
   };
 
   /* -- Submit all feedback ---------------------------------------------- */
-  const handleSubmit = () => {
-    // All annotations are already saved live — "submit" just
-    // confirms to the client that they're done.
-    // TODO: optionally update a "clientSubmittedAt" field on the token doc.
+  const handleSubmitConfirmed = async () => {
+    setShowConfirmModal(false);
+    try {
+      await updateDoc(doc(db, "tokens", token), {
+        clientSubmittedAt: serverTimestamp(),
+      });
+      // Also update project status
+      if (tokenData?.projectId) {
+        await updateDoc(doc(db, "projects", tokenData.projectId), {
+          status: "Needs Action",
+          clientSubmittedAt: serverTimestamp(),
+        });
+      }
+    } catch (e) { console.error(e); }
     setSubmitted(true);
   };
+
+  /* -- Mark as final ---------------------------------------------------- */
+  const handleMarkFinalConfirmed = async () => {
+    setShowFinalModal(false);
+    try {
+      await updateDoc(doc(db, "tokens", token), { markedFinal: true, markedFinalAt: serverTimestamp() });
+      if (tokenData?.projectId) {
+        await updateDoc(doc(db, "projects", tokenData.projectId), {
+          status: "Delivered", markedFinal: true,
+        });
+      }
+    } catch (e) { console.error(e); }
+    setIsFinal(true);
+  };
+
+  /* -- Download --------------------------------------------------------- */
+  const handleDownload = async () => {
+    if (!isFinal || !tokenData?.mediaUrl) return;
+    const link = document.createElement("a");
+    link.href = tokenData.mediaUrl;
+    link.download = `${tokenData.projectName || "file"}_final`;
+    link.target = "_blank";
+    link.click();
+  };
+
+  /* -- Derived ---------------------------------------------------------- */
+  const maxRevisions   = projectData?.maxRevisions ?? tokenData?.maxRevisions ?? 3;
+  const reachedMax     = currentRevision >= maxRevisions && submitted;
+  const canAnnotate    = !!tokenData?.mediaUrl && !submitted && !isFinal && !reachedMax;
+  const annotationCount = currentRevisionAnnotations.length;
+
+  // Task-based progress: annotations submitted = tasks for editor
+  const totalTasks     = currentRevisionAnnotations.length;
+  const resolvedTasks  = currentRevisionAnnotations.filter(a => a.resolved).length;
+  const taskProgress   = submitted && totalTasks > 0
+    ? Math.round((resolvedTasks / totalTasks) * 100)
+    : submitted ? 100 : (tokenData?.progress ?? 0);
 
   /* -- States ----------------------------------------------------------- */
   if (status === "loading") {
@@ -124,8 +351,7 @@ export default function ClientReviewPage({ params }) {
       <div style={{
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
-        height: "100vh", gap: "var(--space-3)",
-        fontFamily: "var(--font-sans)",
+        height: "100vh", gap: "var(--space-3)", fontFamily: "var(--font-sans)",
       }}>
         <p style={{ fontSize: "var(--text-lg)", fontWeight: "var(--font-semibold)", color: "var(--color-text-primary)" }}>
           Invalid or expired link
@@ -142,44 +368,85 @@ export default function ClientReviewPage({ params }) {
   return (
     <div className="app-shell">
 
+      {/* Modals */}
+      {showConfirmModal && (
+        <ConfirmSubmitModal
+          annotationCount={annotationCount}
+          onConfirm={handleSubmitConfirmed}
+          onCancel={() => setShowConfirmModal(false)}
+        />
+      )}
+      {showFinalModal && (
+        <MarkFinalModal
+          onConfirm={handleMarkFinalConfirmed}
+          onCancel={() => setShowFinalModal(false)}
+        />
+      )}
+
       {/* -- Header -- */}
       <header className="app-header">
         <div>
           <p style={{
-            fontSize:   "var(--text-lg)",
-            fontWeight: "var(--font-semibold)",
-            color:      "var(--color-text-primary)",
-            margin:     0,
+            fontSize: "var(--text-lg)", fontWeight: "var(--font-semibold)",
+            color: "var(--color-text-primary)", margin: 0,
           }}>
             {tokenData.projectName}
           </p>
           <p style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", margin: 0 }}>
             Review for {tokenData.client}
+            {" · "}Revision {currentRevision} of {maxRevisions}
           </p>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
-          {/* Progress pill */}
-          {tokenData.mediaUrl ? (
-            <span className="badge badge--delivered">Draft ready</span>
+          {/* Progress ring (task-based after submit) */}
+          {tokenData.mediaUrl && (
+            <div style={{ position: "relative", width: 52, height: 52 }}>
+              <ProgressRing progress={taskProgress} />
+              <span style={{
+                position: "absolute", inset: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "10px", fontWeight: "bold", color: "var(--color-text-primary)",
+              }}>
+                {taskProgress}%
+              </span>
+            </div>
+          )}
+
+          {/* Status badges */}
+          {isFinal ? (
+            <span className="badge badge--delivered">✓ Final</span>
+          ) : submitted ? (
+            <span className="badge badge--needs-action">Awaiting revision</span>
+          ) : tokenData.mediaUrl ? (
+            <span className="badge badge--draft">Draft ready</span>
           ) : (
             <span className="badge badge--draft">
-              {tokenData.progress}% complete
-            </span>
+                  {projectData?.progress ?? tokenData?.progress ?? 0}% complete
+                </span>
+          )}
+
+          {/* Progress bar */}
+          {tokenData.mediaUrl && (
+            <div style={{ width: 120 }}>
+              <div className="header-progress__bar">
+                <div
+                  className="header-progress__fill"
+                  style={{ width: `${taskProgress}%`, transition: "width 0.4s ease" }}
+                />
+              </div>
+            </div>
           )}
 
           <button
             onClick={toggleDarkMode}
             style={{
               display: "flex", alignItems: "center", gap: "6px",
-              padding: "6px 10px",
-              borderRadius: "var(--radius-full)",
+              padding: "6px 10px", borderRadius: "var(--radius-full)",
               background: "var(--color-bg-surface-alt)",
               border: "1px solid var(--color-border-default)",
-              color: "var(--color-text-secondary)",
-              cursor: "pointer",
-              fontSize: "var(--text-xs)",
-              transition: "all var(--transition-fast)",
+              color: "var(--color-text-secondary)", cursor: "pointer",
+              fontSize: "var(--text-xs)", transition: "all var(--transition-fast)",
             }}
           >
             {darkMode ? <SunIcon /> : <MoonIcon />}
@@ -191,46 +458,77 @@ export default function ClientReviewPage({ params }) {
       <main className="app-main">
         <div className="editor-grid">
 
-          {/* -- Left: annotator -- */}
-          <div>
+          {/* -- Left: annotator (scrollable) -- */}
+          <div style={{ minWidth: 0, overflowY: "auto", maxHeight: "calc(100vh - 80px)" }}>
             {!tokenData.mediaUrl ? (
-              /* No upload yet — show progress state */
               <div className="card" style={{
-                display:        "flex",
-                flexDirection:  "column",
-                alignItems:     "center",
-                justifyContent: "center",
-                minHeight:      "360px",
-                gap:            "var(--space-4)",
-                textAlign:      "center",
+                display: "flex", flexDirection: "column",
+                alignItems: "center", justifyContent: "center",
+                minHeight: "360px", gap: "var(--space-5)", textAlign: "center",
+                padding: "var(--space-8)",
               }}>
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
                   stroke="var(--color-primary)" strokeWidth="1.5"
                   strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                 </svg>
-                <p style={{ fontSize: "var(--text-lg)", fontWeight: "var(--font-semibold)", color: "var(--color-text-primary)" }}>
-                  Your editor is still working
-                </p>
-                <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
-                  {tokenData.progress}% complete — check back soon.
-                </p>
+                <div>
+                  <p style={{ fontSize: "var(--text-lg)", fontWeight: "var(--font-semibold)", color: "var(--color-text-primary)", marginBottom: "var(--space-1)" }}>
+                    Your editor is still working
+                  </p>
+                  <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
+                    Check back soon — progress updates in real time.
+                  </p>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{ width: "100%", maxWidth: 340 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "var(--space-2)" }}>
+                    <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>Progress</span>
+                    <span style={{ fontSize: "var(--text-xs)", fontWeight: "var(--font-semibold)", color: "var(--color-text-primary)" }}>
+                      {projectData?.progress ?? tokenData?.progress ?? 0}%
+                    </span>
+                  </div>
+                  <div style={{
+                    height: 8, background: "var(--color-border-default)",
+                    borderRadius: "var(--radius-full)", overflow: "hidden",
+                  }}>
+                    <div style={{
+                      height: "100%",
+                      width: `${projectData?.progress ?? tokenData?.progress ?? 0}%`,
+                      background: "var(--color-primary)",
+                      borderRadius: "var(--radius-full)",
+                      transition: "width 0.5s ease",
+                    }} />
+                  </div>
+                </div>
               </div>
             ) : isVideo ? (
               <VideoAnnotator
                 videoUrl={tokenData.mediaUrl}
                 projectName={tokenData.projectName}
                 clientName={tokenData.client}
-                annotations={annotations}
+                annotations={currentRevisionAnnotations}
                 onAnnotationSave={handleAnnotationSave}
+                locked={!canAnnotate}
+                lockedReason={
+                  isFinal       ? "final"   :
+                  reachedMax    ? "maxRevisions" :
+                  submitted     ? "submitted" : null
+                }
               />
             ) : (
               <ImageAnnotator
                 imageUrl={tokenData.mediaUrl}
                 projectName={tokenData.projectName}
-                annotations={annotations}
+                annotations={currentRevisionAnnotations}
                 onAnnotationSave={handleAnnotationSave}
+                locked={!canAnnotate}
+                lockedReason={
+                  isFinal       ? "final"   :
+                  reachedMax    ? "maxRevisions" :
+                  submitted     ? "submitted" : null
+                }
               />
             )}
           </div>
@@ -238,27 +536,25 @@ export default function ClientReviewPage({ params }) {
           {/* -- Right: sidebar -- */}
           <aside style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
 
-            {/* Project info card */}
+            {/* Project info */}
             <div className="card">
               <p className="card-section-label">Project details</p>
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>Type</span>
-                  <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-primary)", fontWeight: "var(--font-medium)" }}>
-                    {isVideo ? "Video" : "Image"}
-                  </span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>Annotations</span>
-                  <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-primary)", fontWeight: "var(--font-medium)" }}>
-                    {annotations.length}
-                  </span>
-                </div>
+                {[
+                  ["Type",        isVideo ? "Video" : "Image"],
+                  ["Revision",    `${currentRevision} of ${maxRevisions}`],
+                  ["Annotations", `${annotationCount}`],
+                ].map(([label, value]) => (
+                  <div key={label} style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>{label}</span>
+                    <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-primary)", fontWeight: "var(--font-medium)" }}>{value}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* How to annotate card */}
-            {tokenData.mediaUrl && !submitted && (
+            {/* How to annotate — only if can annotate */}
+            {canAnnotate && (
               <div className="card">
                 <p className="card-section-label">How to annotate</p>
                 {isVideo ? (
@@ -267,8 +563,8 @@ export default function ClientReviewPage({ params }) {
                     display: "flex", flexDirection: "column", gap: "var(--space-2)",
                     paddingLeft: "var(--space-4)",
                   }}>
-                    <li><strong>Mark frame</strong> — click the timeline to flag an exact moment</li>
-                    <li><strong>Mark range</strong> — click twice to flag a duration</li>
+                    <li><strong>Mark frame</strong> — flag an exact moment</li>
+                    <li><strong>Mark range</strong> — flag a duration</li>
                     <li>Add a comment and save</li>
                   </ul>
                 ) : (
@@ -278,38 +574,110 @@ export default function ClientReviewPage({ params }) {
                     paddingLeft: "var(--space-4)",
                   }}>
                     <li><strong>Draw region</strong> — drag an oval over an area</li>
-                    <li><strong>Drop pin</strong> — click to mark an exact spot</li>
+                    <li><strong>Drop pin</strong> — click to mark a spot</li>
                     <li>Add a comment and save</li>
                   </ul>
                 )}
               </div>
             )}
 
-            {/* Submit button */}
+            {/* Locked state notice */}
+            {submitted && !isFinal && !reachedMax && (
+              <div style={{
+                background: "rgba(234,88,12,0.08)", border: "1px solid rgba(234,88,12,0.25)",
+                borderRadius: "var(--radius-lg)", padding: "var(--space-4)",
+                fontSize: "var(--text-sm)", color: "#EA580C", lineHeight: "1.5",
+              }}>
+                <strong>Annotations locked.</strong> Waiting for your editor to upload revision {currentRevision + 1}.
+                You'll be able to annotate again once the next draft is ready.
+              </div>
+            )}
+
+            {reachedMax && !isFinal && (
+              <div style={{
+                background: "rgba(100,116,139,0.1)", border: "1px solid rgba(100,116,139,0.2)",
+                borderRadius: "var(--radius-lg)", padding: "var(--space-4)",
+                fontSize: "var(--text-sm)", color: "var(--color-text-secondary)", lineHeight: "1.5",
+              }}>
+                <strong>Max revisions reached.</strong> No more annotations can be added. Please mark the project as final or contact your editor.
+              </div>
+            )}
+
+            {/* Action card */}
             {tokenData.mediaUrl && (
               <div className="card">
-                {submitted ? (
-                  <div style={{ textAlign: "center", padding: "var(--space-3)" }}>
-                    <p style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-semibold)", color: "var(--color-text-primary)", marginBottom: "var(--space-2)" }}>
-                      ✓ Feedback submitted
-                    </p>
-                    <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
-                      Your editor has been notified.
-                    </p>
+                {isFinal ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)", textAlign: "center" }}>
+                    <div style={{
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: "var(--space-2)",
+                      color: "#10B981", fontWeight: "var(--font-semibold)",
+                    }}>
+                      <CheckCircleIcon />
+                      <span>Marked as final</span>
+                    </div>
+                    <button
+                      className="btn btn--primary"
+                      onClick={handleDownload}
+                      style={{ width: "100%", justifyContent: "center", background: "#10B981", borderColor: "#10B981", display: "flex", alignItems: "center", gap: "var(--space-2)" }}
+                    >
+                      <DownloadIcon />
+                      Download file
+                    </button>
                   </div>
+
+                ) : submitted ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+                    <div style={{ textAlign: "center" }}>
+                      <p style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-semibold)", color: "var(--color-text-primary)", marginBottom: "var(--space-1)" }}>
+                        ✓ Feedback submitted
+                      </p>
+                      <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
+                        Your editor has been notified.
+                      </p>
+                    </div>
+                    {!reachedMax && (
+                      <button
+                        className="btn btn--ghost"
+                        onClick={() => setShowFinalModal(true)}
+                        style={{ width: "100%", justifyContent: "center", display: "flex", alignItems: "center", gap: "var(--space-2)" }}
+                      >
+                        <CheckCircleIcon />
+                        Happy with this draft? Mark as final
+                      </button>
+                    )}
+                    {reachedMax && (
+                      <button
+                        className="btn btn--primary"
+                        onClick={() => setShowFinalModal(true)}
+                        style={{ width: "100%", justifyContent: "center", display: "flex", alignItems: "center", gap: "var(--space-2)", background: "#10B981", borderColor: "#10B981" }}
+                      >
+                        <CheckCircleIcon />
+                        Mark as final & download
+                      </button>
+                    )}
+                  </div>
+
                 ) : (
-                  <>
-                    <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)", marginBottom: "var(--space-4)", lineHeight: "1.5" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+                    <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)", lineHeight: "1.5" }}>
                       Done reviewing? Submit your feedback to notify your editor.
                     </p>
                     <button
                       className="btn btn--primary"
-                      onClick={handleSubmit}
+                      onClick={() => setShowConfirmModal(true)}
                       style={{ width: "100%", justifyContent: "center" }}
                     >
-                      Submit feedback
+                      Submit feedback ({annotationCount})
                     </button>
-                  </>
+                    <button
+                      className="btn btn--ghost"
+                      onClick={() => setShowFinalModal(true)}
+                      style={{ width: "100%", justifyContent: "center", display: "flex", alignItems: "center", gap: "var(--space-2)", fontSize: "var(--text-xs)" }}
+                    >
+                      <CheckCircleIcon />
+                      No changes needed — mark as final
+                    </button>
+                  </div>
                 )}
               </div>
             )}
