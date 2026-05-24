@@ -29,7 +29,7 @@ export default function ImageViewer({ project, annotations = [] }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
 
-      {/* ── Image (read-only for editor) ── */}
+      {/* -- Image (read-only for editor) -- */}
       <img
         ref={imgRef}
         src={project.mediaUrl}
@@ -37,7 +37,7 @@ export default function ImageViewer({ project, annotations = [] }) {
         style={{ width: "100%", display: "block", borderRadius: "var(--radius-xl)" }}
       />
 
-      {/* ── Client annotations (read-only list) ── */}
+      {/* -- Client annotations (read-only list) -- */}
       {annotations.length > 0 ? (
         <div className="card" style={{ padding: "var(--space-5)" }}>
           <p className="card-section-label">Client annotations ({annotations.length})</p>

@@ -1,8 +1,8 @@
 "use client";
-import { useState }        from "react";
-import { CldUploadWidget } from "next-cloudinary";
-import { UserButton }      from "@clerk/nextjs";
-import { useTheme }        from "../../../theme-provider";
+import { useState, useEffect }  from "react";
+import { CldUploadWidget }      from "next-cloudinary";
+import { UserButton }           from "@clerk/nextjs";
+import { useTheme }             from "../../../theme-provider";
 
 import WorkLogPanel      from "./WorkLogPanel";
 // ... (rest of imports)
@@ -32,8 +32,11 @@ function MoonIcon() {
 }
 import RevisionChecklist from "./RevisionChecklist";
 import ImageViewer       from "./ImageViewer";
+import VideoViewer       from "./VideoViewer";
+import { db }            from "../../../lib/firebase";
+import { doc, setDoc, serverTimestamp, collection, query, orderBy, onSnapshot } from "firebase/firestore";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// --- Helpers -----------------------------------------------------------------
 
 function statusBadgeClass(status) {
   const map = {
@@ -61,7 +64,7 @@ function ProgressRing({ progress = 0, size = 40, stroke = 3 }) {
   );
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// --- Component ----------------------------------------------------------------
 
 export default function EditorView({
   project,
@@ -72,15 +75,40 @@ export default function EditorView({
   const { darkMode, toggleDarkMode } = useTheme();
   const isImage         = project.projectType === "image";
   const isReadyToUpload = isImage ? true : project.progress >= 100;
-  const [token, setToken] = useState(null);
+  const [token, setToken]           = useState(null);
+  const [annotations, setAnnotations] = useState([]);
 
-  const handleGenerateToken = () => {
+  // -- Subscribe to client annotations in real-time ----------------------
+  useEffect(() => {
+    if (!project?.id) return;
+    const q = query(
+      collection(db, "projects", project.id, "annotations"),
+      orderBy("createdAt", "asc")
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      setAnnotations(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsub();
+  }, [project?.id]);
+
+  const handleGenerateToken = async () => {
     const clientSlug = project.client.toLowerCase().replace(/\s+/g, "");
     const generated  = `${clientSlug}_${Math.random().toString(36).slice(2, 8)}`;
-    const mockUrl    = `${window.location.origin}/review/${generated}`;
-    navigator.clipboard?.writeText(mockUrl).catch(() => {});
+    const reviewUrl  = `${window.location.origin}/client/${generated}`;
+
+    // Save token to Firestore so the client page can read it
+    await setDoc(doc(db, "tokens", generated), {
+      projectId:   project.id,
+      projectName: project.name,
+      client:      project.client,
+      projectType: project.projectType,
+      progress:    project.progress,
+      mediaUrl:    project.mediaUrl,
+      createdAt:   serverTimestamp(),
+    });
+
+    navigator.clipboard?.writeText(reviewUrl).catch(() => {});
     setToken(generated);
-    // TODO: write token + progress snapshot to Firestore
   };
 
   // RevisionChecklist passes back updatedTasks in the patch
@@ -96,7 +124,7 @@ export default function EditorView({
   return (
     <div className="app-shell">
 
-      {/* ── Header ── */}
+      {/* -- Header -- */}
       <header className="app-header">
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
           <button className="btn btn--ghost" onClick={onBack}
@@ -206,7 +234,7 @@ export default function EditorView({
         </div>
       </header>
 
-      {/* ── Body ── */}
+      {/* -- Body -- */}
       <main className="app-main">
         <div style={{
           display:             "grid",
@@ -215,7 +243,7 @@ export default function EditorView({
           alignItems:          "start",
         }} className="editor-grid">
 
-          {/* ── Left: media area ── */}
+          {/* -- Left: media area -- */}
           <div>
             <div className="card" style={{
               padding:      0,
@@ -392,37 +420,24 @@ export default function EditorView({
                 )
 
               ) : (
-                /* ── Media uploaded ── */
+                /* -- Media uploaded -- */
                 isImage ? (
                   <div style={{ padding: "var(--space-4)" }}>
                     <ImageViewer
                       project={project}
-                      annotations={project.annotations ?? []}
+                      annotations={annotations}
                     />
                   </div>
                 ) : (
-                  <div style={{
-                    background:   "#000",
-                    borderRadius: "var(--radius-xl)",
-                    overflow:     "hidden",
-                    lineHeight:   0,
-                  }}>
-                    <video
-                      src={project.mediaUrl}
-                      controls
-                      style={{
-                        width:     "100%",
-                        maxHeight: "70vh",
-                        objectFit: "contain",
-                        display:   "block",
-                      }}
-                    />
-                  </div>
+                  <VideoViewer
+                    project={project}
+                    annotations={annotations}
+                  />
                 )
               )}
             </div>
 
-            {/* ── Action buttons — always visible ── */}
+            {/* -- Action buttons — always visible -- */}
             <div style={{
               display:    "flex",
               gap:        "var(--space-3)",
@@ -465,11 +480,11 @@ export default function EditorView({
                     whiteSpace:   "nowrap",
                     flex:         1,
                   }}>
-                    {window.location.origin}/review/{token}
+                    {window.location.origin}/client/{token}
                   </code>
                   <button
                     onClick={() => navigator.clipboard?.writeText(
-                      `${window.location.origin}/review/${token}`
+                      `${window.location.origin}/client/${token}`
                     )}
                     style={{
                       background: "none",
@@ -501,7 +516,7 @@ export default function EditorView({
             </div>
           </div>
 
-          {/* ── Right: panel ── */}
+          {/* -- Right: panel -- */}
           <aside>
             {!project.mediaUrl ? (
               isImage ? null : (

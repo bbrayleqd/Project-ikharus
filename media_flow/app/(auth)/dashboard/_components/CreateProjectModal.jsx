@@ -64,7 +64,7 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
 
         <form onSubmit={handleSubmit}>
 
-          {/* ── Project type toggle ── */}
+          {/* -- Project type toggle -- */}
           <div className="form-group">
             <label className="form-label">Project type</label>
             <div style={{ display: "flex", gap: "var(--space-3)" }}>
@@ -133,7 +133,7 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
             </div>
           </div>
 
-          {/* ── Project name ── */}
+          {/* -- Project name -- */}
           <div className="form-group">
             <label className="form-label" htmlFor="proj-name">Project name</label>
             <input
@@ -147,7 +147,7 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
             />
           </div>
 
-          {/* ── Client name ── */}
+          {/* -- Client name -- */}
           <div className="form-group">
             <label className="form-label" htmlFor="client-name">Client name</label>
             <input
@@ -161,7 +161,7 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
             />
           </div>
 
-          {/* ── Max revisions ── */}
+          {/* -- Max revisions -- */}
           <div className="form-group">
             <label className="form-label" htmlFor="max-rev">Max revisions</label>
             <input
@@ -177,7 +177,7 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
             <span className="form-hint">How many revision rounds are included.</span>
           </div>
 
-          {/* ── Deadline Date ── */}
+          {/* -- Deadline Date -- */}
           <div className="form-group">
             <label className="form-label" htmlFor="deadline">Deadline date</label>
             <input
@@ -191,7 +191,7 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
             <span className="form-hint">When does this project need to be finished?</span>
           </div>
 
-          {/* ── VIDEO: max work duration ── */}
+          {/* -- VIDEO: max work duration -- */}
           {isVideo && (
             <div className="form-group">
               <label className="form-label">Maximum work duration</label>
