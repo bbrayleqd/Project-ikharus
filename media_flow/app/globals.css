@@ -997,34 +997,43 @@ ul, ol {
   }
 }
 
-/* Image viewer container */
+
+/* ------------------------------------------------------------
+   19. IMAGE & VIDEO VIEWERS (With 70vh max-height)
+   ------------------------------------------------------------ */
+
 .image-viewer-container {
-  max-width: 100%;
-  max-height: 600px;
+  position: relative;
+  line-height: 0;
+  border-radius: var(--radius-xl);
   overflow: auto;
-  border: 1px solid var(--color-border-tertiary);
-  border-radius: 8px;
-  background-color: var(--color-background-secondary);
+  max-height: min(70vh, 600px);
+  max-width: 100%;
+  border: 1px solid var(--color-border-default);
+  background-color: var(--color-bg-surface-alt);
 }
 
 .image-viewer-container img {
   display: block;
   width: 100%;
   height: auto;
+  object-fit: contain;
+  border-radius: var(--radius-xl);
 }
 
-/* Video viewer container */
 .video-viewer-container {
-  max-width: 100%;
-  max-height: 700px;
+  background: #000;
+  border-radius: var(--radius-xl);
   overflow: auto;
-  border: 1px solid var(--color-border-tertiary);
-  border-radius: 8px;
-  background-color: var(--color-background-secondary);
+  line-height: 0;
+  max-height: min(70vh, 600px);
+  max-width: 100%;
+  border: 1px solid var(--color-border-default);
 }
 
 .video-viewer-container video {
   display: block;
   width: 100%;
   height: auto;
+  object-fit: contain;
 }
