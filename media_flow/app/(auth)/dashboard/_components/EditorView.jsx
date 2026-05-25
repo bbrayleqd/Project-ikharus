@@ -291,7 +291,8 @@ export default function EditorView({
     if (project.clientToken) setToken(project.clientToken);
   }, [project.clientToken]);
 
-  // Current revision annotations only
+  // currentRevision = number of times client has submitted feedback.
+  // Annotations are stored at revision = currentRevision (post-bump value after submit).
   const currentAnnotations = annotations.filter(
     (a) => (a.revision ?? 1) === currentRevision
   );
@@ -305,10 +306,13 @@ export default function EditorView({
     : project.progress ?? 0;
 
   const maxRevisions  = project.maxRevisions ?? 3;
+  // revisionsLeft: how many more client feedback rounds are allowed after this upload.
+  // currentRevision is how many rounds already submitted. If == maxRevisions, this is the final delivery.
   const revisionsLeft = maxRevisions - currentRevision;
 
-  // Upload is allowed only when all tasks are resolved (or no tasks yet)
-  const canUploadRevision = project.mediaUrl && allResolved && revisionsLeft > 0;
+  // Upload is allowed when all tasks are resolved (or no tasks yet on first upload).
+  // Always allow the final delivery upload even when revisionsLeft === 0.
+  const canUploadRevision = project.mediaUrl && allResolved && (revisionsLeft > 0 || currentRevision === maxRevisions);
 
   // --- Toggle annotation resolved -------------------------------------------
   const handleToggleResolved = async (annotationId, resolved) => {
@@ -457,7 +461,7 @@ export default function EditorView({
       </header>
 
       {/* -- Body: scrollable -- */}
-      <main className="app-main" style={{ overflowY: "auto" }}>
+      <main className="app-main">
         <div className="editor-grid">
 
           {/* -- Left: media area -- */}
@@ -615,7 +619,7 @@ export default function EditorView({
                       style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}
                     >
                       <UploadIcon />
-                      Upload revision {currentRevision + 1}
+                      {currentRevision >= maxRevisions ? "Upload final delivery" : `Upload revision ${currentRevision + 1}`}
                     </button>
                   )}
                 </CldUploadWidget>
@@ -630,14 +634,14 @@ export default function EditorView({
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                   </svg>
-                  Resolve all tasks to unlock next upload
+                  Resolve all tasks to unlock {currentRevision >= maxRevisions ? "final delivery" : "next upload"}
                 </span>
               )}
 
-              {/* Max revisions reached */}
-              {project.mediaUrl && revisionsLeft <= 0 && (
-                <span className="badge badge--unresolved" style={{ padding: "var(--space-2) var(--space-4)" }}>
-                  Max revisions reached
+              {/* Max revisions reached — only after final delivery upload */}
+              {project.mediaUrl && currentRevision > maxRevisions && (
+                <span className="badge badge--delivered" style={{ padding: "var(--space-2) var(--space-4)" }}>
+                  Final delivery uploaded
                 </span>
               )}
             </div>

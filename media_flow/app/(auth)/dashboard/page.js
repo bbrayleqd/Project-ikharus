@@ -111,6 +111,7 @@ export default function DashboardPage() {
         tasks:           [],
         annotations:     [],
         mediaUrl:        null,
+        currentRevision: 0,
         version:         "v1",
         status:          "In Progress",
         editorId:        user.id,
@@ -147,19 +148,18 @@ export default function DashboardPage() {
 
   const handleMediaUploaded = async (url) => {
     if (!selectedProject) return;
-    const nextRevision = (selectedProject.currentRevision ?? 0) + 1;
+    // Revision is NOT bumped here — it increments when the CLIENT submits feedback.
+    // This upload just delivers the new media and unlocks the client for the current round.
     await updateDoc(doc(db, "projects", selectedProject.id), {
-      mediaUrl:        url,
-      currentRevision: nextRevision,
-      status:          "Needs Action",
+      mediaUrl: url,
+      status:   "In Review",
     });
-    // Sync the client token so client sees new media immediately
+    // Sync the client token so client sees new media and can annotate again
     if (selectedProject.clientToken) {
       try {
         await updateDoc(doc(db, "tokens", selectedProject.clientToken), {
           mediaUrl:          url,
-          currentRevision:   nextRevision,
-          clientSubmittedAt: null,
+          clientSubmittedAt: null,   // unlock annotations
         });
       } catch (e) { console.error("Token sync failed:", e); }
     }

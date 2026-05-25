@@ -240,6 +240,7 @@ export default function ClientReviewPage({ params }) {
   const [annotations,       setAnnotations]        = useState([]);
   const [status,            setStatus]             = useState("loading");
   const [submitted,         setSubmitted]          = useState(false);
+  const [hasEverSubmitted,  setHasEverSubmitted]   = useState(false);
   const [showConfirmModal,  setShowConfirmModal]   = useState(false);
   const [showFinalModal,    setShowFinalModal]     = useState(false);
   const [isFinal,           setIsFinal]            = useState(false);
@@ -254,6 +255,7 @@ export default function ClientReviewPage({ params }) {
         const data = snap.data();
         setTokenData(data);
         setSubmitted(!!data.clientSubmittedAt);
+        setHasEverSubmitted(!!data.hasEverSubmitted);
         setIsFinal(!!data.markedFinal);
         setCurrentRevision(data.currentRevision ?? 1);
 
@@ -274,8 +276,9 @@ export default function ClientReviewPage({ params }) {
         const data = snap.data();
         setTokenData(data);
         setSubmitted(!!data.clientSubmittedAt);
+        setHasEverSubmitted(!!data.hasEverSubmitted);
         setIsFinal(!!data.markedFinal);
-        setCurrentRevision(data.currentRevision ?? 0);
+        setCurrentRevision(data.currentRevision ?? 1);
       }
     });
     return () => unsub();
@@ -308,7 +311,9 @@ export default function ClientReviewPage({ params }) {
 
   /* -- Current revision annotations (only this round) ------------------- */
   const currentRevisionAnnotations = annotations.filter(
-    (a) => (a.revision ?? 1) === (currentRevision || 1)
+    // annotations are saved at (currentRevision + 1) while annotating;
+    // after submit, currentRevision bumps to that value — filter stays consistent.
+    (a) => (a.revision ?? 1) === (submitted ? currentRevision : currentRevision + 1)
   );
 
   /* -- Save annotation to Firestore ------------------------------------- */
@@ -324,7 +329,7 @@ export default function ClientReviewPage({ params }) {
       {
         ...annotationData,
         token,
-        revision:  currentRevision,
+        revision:  currentRevision + 1,  // round being annotated; bumps to this on submit
         createdAt: serverTimestamp(),
       }
     );
@@ -333,14 +338,19 @@ export default function ClientReviewPage({ params }) {
   /* -- Submit all feedback ---------------------------------------------- */
   const handleSubmitConfirmed = async () => {
     setShowConfirmModal(false);
+    // Revision increments HERE — when client sends feedback — not on editor upload.
+    const nextRevision = currentRevision + 1;
     try {
       await updateDoc(doc(db, "tokens", token), {
         clientSubmittedAt: serverTimestamp(),
+        hasEverSubmitted:  true,
+        currentRevision:   nextRevision,
       });
-      // Also update project status
+      // Also update project status and revision
       if (tokenData?.projectId) {
         await updateDoc(doc(db, "projects", tokenData.projectId), {
-          status: "Needs Action",
+          status:            "Needs Action",
+          currentRevision:   nextRevision,
           clientSubmittedAt: serverTimestamp(),
         });
       }
@@ -374,10 +384,15 @@ export default function ClientReviewPage({ params }) {
 
   /* -- Derived ---------------------------------------------------------- */
   const maxRevisions   = projectData?.maxRevisions ?? tokenData?.maxRevisions ?? 3;
-  const reachedMax     = currentRevision >= maxRevisions && submitted;
+  // After submitting round N, currentRevision becomes N+1.
+  // reachedMax when that next value exceeds the allowed maximum.
+  const reachedMax     = submitted && currentRevision > maxRevisions;
   // Use projectData.mediaUrl as source of truth (most up to date), fall back to token
   const mediaUrl       = projectData?.mediaUrl ?? tokenData?.mediaUrl ?? null;
   const canAnnotate    = !!mediaUrl && !submitted && !isFinal && !reachedMax;
+  // Display: when actively annotating show the round they're ON (currentRevision + 1),
+  // when submitted show the round they just completed (currentRevision).
+  const displayRevision = submitted ? currentRevision : currentRevision + 1;
   const annotationCount = currentRevisionAnnotations.length;
 
   // Task-based progress: annotations submitted = tasks for editor
@@ -448,7 +463,7 @@ export default function ClientReviewPage({ params }) {
           </p>
           <p style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", margin: 0 }}>
             Review for {tokenData.client}
-            {" · "}Revision {currentRevision} of {maxRevisions}
+            {hasEverSubmitted && ` · Revision ${displayRevision} of ${maxRevisions}`}
           </p>
         </div>
 
@@ -596,7 +611,7 @@ export default function ClientReviewPage({ params }) {
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
                 {[
                   ["Type",        isVideo ? "Video" : "Image"],
-                  ["Revision",    `${currentRevision} of ${maxRevisions}`],
+                  ...(hasEverSubmitted ? [["Revision", `${displayRevision} of ${maxRevisions}`]] : []),
                   ["Annotations", `${annotationCount}`],
                 ].map(([label, value]) => (
                   <div key={label} style={{ display: "flex", justifyContent: "space-between" }}>

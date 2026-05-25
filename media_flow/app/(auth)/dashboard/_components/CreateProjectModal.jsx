@@ -25,6 +25,24 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
     deadline:        initialData?.deadline ?? "",
   });
 
+  // Contact links — each is { label: string, url: string }
+  const [contactLinks, setContactLinks] = useState(
+    initialData?.contactLinks?.length
+      ? initialData.contactLinks
+      : [{ label: "", url: "" }]
+  );
+
+  const addContactLink = () =>
+    setContactLinks((prev) => [...prev, { label: "", url: "" }]);
+
+  const removeContactLink = (i) =>
+    setContactLinks((prev) => prev.filter((_, idx) => idx !== i));
+
+  const updateContactLink = (i, key, value) =>
+    setContactLinks((prev) =>
+      prev.map((link, idx) => (idx === i ? { ...link, [key]: value } : link))
+    );
+
 
 
   const field = (key, value) =>
@@ -32,11 +50,13 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const cleanedLinks = contactLinks.filter((l) => l.url.trim() !== "");
     onCreate({
       ...formData,
       maxDurationMins: parseInt(formData.maxDurationMins) || 0,
       maxDurationSecs: parseInt(formData.maxDurationSecs) || 0,
       maxRevisions:    parseInt(formData.maxRevisions)    || 3,
+      contactLinks:    cleanedLinks,
       tasks: [],
     });
   };
@@ -234,6 +254,73 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
           )}
 
 
+
+          {/* -- Contact links -- */}
+          <div className="form-group">
+            <label className="form-label">Contact links</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+              {contactLinks.map((link, i) => (
+                <div key={i} style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
+                  <input
+                    className="form-input"
+                    type="text"
+                    placeholder="Label (e.g. WhatsApp)"
+                    value={link.label}
+                    onChange={(e) => updateContactLink(i, "label", e.target.value)}
+                    style={{ width: "36%", flexShrink: 0 }}
+                  />
+                  <input
+                    className="form-input"
+                    type="url"
+                    placeholder="https://…"
+                    value={link.url}
+                    onChange={(e) => updateContactLink(i, "url", e.target.value)}
+                    style={{ flex: 1 }}
+                  />
+                  {contactLinks.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeContactLink(i)}
+                      style={{
+                        flexShrink: 0, background: "none", border: "none",
+                        cursor: "pointer", color: "var(--color-text-muted)",
+                        padding: "4px", borderRadius: "var(--radius-sm)",
+                        display: "flex", alignItems: "center",
+                        transition: "color var(--transition-fast)",
+                      }}
+                      title="Remove"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={addContactLink}
+              style={{
+                marginTop: "var(--space-2)",
+                background: "none", border: "1px dashed var(--color-border-default)",
+                borderRadius: "var(--radius-md)", cursor: "pointer",
+                color: "var(--color-primary)", fontSize: "var(--text-xs)",
+                fontWeight: "var(--font-medium)", padding: "var(--space-2) var(--space-3)",
+                display: "flex", alignItems: "center", gap: "var(--space-1)",
+                width: "100%", justifyContent: "center",
+                transition: "background var(--transition-fast)",
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Add another link
+            </button>
+            <span className="form-hint">e.g. WhatsApp, email, Instagram — shown to the client on their review page.</span>
+          </div>
 
           <div className="modal__footer">
             <button type="button" className="btn btn--ghost" onClick={onClose}>
