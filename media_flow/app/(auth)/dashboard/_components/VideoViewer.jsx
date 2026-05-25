@@ -7,6 +7,7 @@
  * rendered on the timeline — frame pins (▼) and range bars.
  * Clicking any marker seeks to that timestamp.
  * All annotations are read-only — the editor cannot add or remove them.
+ * Now with scrollable container for large videos.
  *
  * Props:
  *   project      — the full project object (needs mediaUrl, name)
@@ -105,19 +106,20 @@ export default function VideoViewer({ project, annotations = [] }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
 
-      {/* -- Video ------------------------------------------- */}
+      {/* -- Video (scrollable container) -------------------- */}
       <div style={{
         background:   "#000",
         borderRadius: "var(--radius-xl)",
-        overflow:     "hidden",
+        overflow:     "auto",
         lineHeight:   0,
+        maxHeight:    "600px",
+        border:       "1px solid var(--color-border-default)",
       }}>
         <video
           ref={videoRef}
           src={project.mediaUrl}
           style={{
             width:     "100%",
-            maxHeight: "65vh",
             objectFit: "contain",
             display:   "block",
           }}

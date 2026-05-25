@@ -2,6 +2,7 @@
 /**
  * ImageViewer.jsx — editor's read-only view of the image with client annotations
  * Renders ellipse and pin annotations on a canvas overlay.
+ * Now with scrollable container for large images.
  */
 
 import { useRef, useEffect, useCallback, useState } from "react";
@@ -31,9 +32,9 @@ export default function ImageViewer({ project, annotations = [] }) {
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    
     annotations.forEach((ann, i) => {
       const isActive = i === selected;
-
       if (ann.type === "ellipse") {
         ctx.beginPath();
         ctx.ellipse(ann.cx, ann.cy, ann.rx, ann.ry, 0, 0, 2 * Math.PI);
@@ -114,47 +115,64 @@ export default function ImageViewer({ project, annotations = [] }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
 
-      {/* Image + canvas overlay */}
+      {/* Image + canvas overlay (scrollable container) */}
       <div style={{
-        position: "relative", lineHeight: 0,
-        borderRadius: "var(--radius-xl)", overflow: "hidden",
+        position: "relative",
+        lineHeight: 0,
+        borderRadius: "var(--radius-xl)",
+        overflow: "auto",
+        maxHeight: "100vh",
+        border: "1px solid var(--color-border-default)",
+        backgroundColor: "var(--color-bg-surface-alt)",
       }}>
-        <img
-          ref={imgRef}
-          src={project.mediaUrl}
-          alt={project.name}
-          onLoad={() => setImgLoaded(true)}
-          style={{
-            width: "100%", display: "block",
-            borderRadius: "var(--radius-xl)",
-            maxHeight: "65vh", objectFit: "contain",
-          }}
-          draggable={false}
-        />
-        <canvas
-          ref={canvasRef}
-          onClick={handleCanvasClick}
-          style={{
-            position: "absolute", inset: 0,
-            width: "100%", height: "100%",
-            cursor: selected !== null ? "pointer" : "default",
-            borderRadius: "var(--radius-xl)",
-          }}
-        />
-        {annotations.length > 0 && (
-          <div style={{
-            position: "absolute", bottom: "var(--space-3)", left: "50%",
-            transform: "translateX(-50%)",
-            background: "rgba(0,0,0,0.55)", color: "#fff",
-            padding: "var(--space-1) var(--space-4)",
-            borderRadius: "var(--radius-full)",
-            fontSize: "var(--text-xs)", fontWeight: "var(--font-medium)",
-            pointerEvents: "none", whiteSpace: "nowrap",
-          }}>
-            {annotations.length} annotation{annotations.length !== 1 ? "s" : ""} — click to highlight
-          </div>
-        )}
+        <div style={{
+          position: "relative",
+          display: "inline-block",
+          width: "100%",
+        }}>
+          <img
+            ref={imgRef}
+            src={project.mediaUrl}
+            alt={project.name}
+            onLoad={() => setImgLoaded(true)}
+            style={{
+              width: "100%",
+              display: "block",
+              objectFit: "contain",
+              borderRadius: "var(--radius-xl)",
+            }}
+            draggable={false}
+          />
+          <canvas
+            ref={canvasRef}
+            onClick={handleCanvasClick}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              cursor: selected !== null ? "pointer" : "default",
+            }}
+          />
+        </div>
       </div>
+
+      {annotations.length > 0 && (
+        <div style={{
+          position: "relative",
+          background: "rgba(0,0,0,0.55)",
+          color: "#fff",
+          padding: "var(--space-1) var(--space-4)",
+          borderRadius: "var(--radius-full)",
+          fontSize: "var(--text-xs)",
+          fontWeight: "var(--font-medium)",
+          whiteSpace: "nowrap",
+          textAlign: "center",
+        }}>
+          {annotations.length} annotation{annotations.length !== 1 ? "s" : ""} — click to highlight
+        </div>
+      )}
 
       {/* Annotation list */}
       {annotations.length > 0 ? (

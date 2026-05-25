@@ -996,3 +996,35 @@ ul, ol {
     padding: var(--space-2) var(--space-3) !important;
   }
 }
+
+/* Image viewer container */
+.image-viewer-container {
+  max-width: 100%;
+  max-height: 600px;
+  overflow: auto;
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: 8px;
+  background-color: var(--color-background-secondary);
+}
+
+.image-viewer-container img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Video viewer container */
+.video-viewer-container {
+  max-width: 100%;
+  max-height: 700px;
+  overflow: auto;
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: 8px;
+  background-color: var(--color-background-secondary);
+}
+
+.video-viewer-container video {
+  display: block;
+  width: 100%;
+  height: auto;
+}
