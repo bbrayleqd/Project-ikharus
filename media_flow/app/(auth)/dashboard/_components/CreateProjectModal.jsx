@@ -25,39 +25,50 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
     deadline:        initialData?.deadline ?? "",
   });
 
-  // Task list state for image projects
-  const [taskInput, setTaskInput] = useState("");
-  const [tasks, setTasks]         = useState(initialData?.tasks?.map(t => t.label) ?? []);
+  // Contact links — each is { label: string, url: string }
+  const [contactLinks, setContactLinks] = useState(
+    initialData?.contactLinks?.length
+      ? initialData.contactLinks
+      : [{ label: "", url: "" }]
+  );
+
+  const addContactLink = () =>
+    setContactLinks((prev) => [...prev, { label: "", url: "" }]);
+
+  const removeContactLink = (i) =>
+    setContactLinks((prev) => prev.filter((_, idx) => idx !== i));
+
+  const updateContactLink = (i, key, value) =>
+    setContactLinks((prev) =>
+      prev.map((link, idx) => (idx === i ? { ...link, [key]: value } : link))
+    );
+
+
 
   const field = (key, value) =>
     setFormData((prev) => ({ ...prev, [key]: value }));
 
-  const handleAddTask = () => {
-    const trimmed = taskInput.trim();
-    if (!trimmed) return;
-    setTasks((prev) => [...prev, trimmed]);
-    setTaskInput("");
-  };
-
-  const handleRemoveTask = (index) => {
-    setTasks((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
+    const cleanedLinks = contactLinks.filter((l) => l.url.trim() !== "");
     onCreate({
       ...formData,
       maxDurationMins: parseInt(formData.maxDurationMins) || 0,
       maxDurationSecs: parseInt(formData.maxDurationSecs) || 0,
       maxRevisions:    parseInt(formData.maxRevisions)    || 3,
-      tasks,
+      contactLinks:    cleanedLinks,
+      tasks: [],
     });
   };
 
   const isVideo    = formData.projectType === "video";
   const totalSecs  = (parseInt(formData.maxDurationMins) || 0) * 60
                    + (parseInt(formData.maxDurationSecs) || 0);
-  const canSubmit  = isVideo ? totalSecs > 0 : tasks.length > 0;
+  const baseFieldsFilled =
+    formData.name.trim() !== "" &&
+    formData.client.trim() !== "" &&
+    formData.deadline !== "";
+  const canSubmit = baseFieldsFilled && (isVideo ? totalSecs > 0 : true);
 
   return (
     <div
@@ -73,7 +84,7 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
 
         <form onSubmit={handleSubmit}>
 
-          {/* ── Project type toggle ── */}
+          {/* -- Project type toggle -- */}
           <div className="form-group">
             <label className="form-label">Project type</label>
             <div style={{ display: "flex", gap: "var(--space-3)" }}>
@@ -142,7 +153,7 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
             </div>
           </div>
 
-          {/* ── Project name ── */}
+          {/* -- Project name -- */}
           <div className="form-group">
             <label className="form-label" htmlFor="proj-name">Project name</label>
             <input
@@ -156,7 +167,7 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
             />
           </div>
 
-          {/* ── Client name ── */}
+          {/* -- Client name -- */}
           <div className="form-group">
             <label className="form-label" htmlFor="client-name">Client name</label>
             <input
@@ -170,7 +181,7 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
             />
           </div>
 
-          {/* ── Max revisions ── */}
+          {/* -- Max revisions -- */}
           <div className="form-group">
             <label className="form-label" htmlFor="max-rev">Max revisions</label>
             <input
@@ -186,7 +197,7 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
             <span className="form-hint">How many revision rounds are included.</span>
           </div>
 
-          {/* ── Deadline Date ── */}
+          {/* -- Deadline Date -- */}
           <div className="form-group">
             <label className="form-label" htmlFor="deadline">Deadline date</label>
             <input
@@ -200,7 +211,7 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
             <span className="form-hint">When does this project need to be finished?</span>
           </div>
 
-          {/* ── VIDEO: max work duration ── */}
+          {/* -- VIDEO: max work duration -- */}
           {isVideo && (
             <div className="form-group">
               <label className="form-label">Maximum work duration</label>
@@ -242,85 +253,74 @@ export default function CreateProjectModal({ onClose, onCreate, initialData }) {
             </div>
           )}
 
-          {/* ── IMAGE: revision checklist tasks ── */}
-          {!isVideo && (
-            <div className="form-group">
-              <label className="form-label">Requests</label>
-              <span className="form-hint" style={{ marginBottom: "var(--space-2)", display: "block" }}>
-                Add tasks the editor must complete before uploading the final image.
-              </span>
 
-              {/* Add task input */}
-              <div style={{ display: "flex", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
-                <input
-                  className="form-input"
-                  type="text"
-                  placeholder="e.g. Color grading"
-                  value={taskInput}
-                  onChange={(e) => setTaskInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTask())}
-                  style={{ flex: 1 }}
-                />
-                <button
-                  type="button"
-                  className="btn btn--primary"
-                  onClick={handleAddTask}
-                  style={{ height: 40, paddingLeft: "var(--space-4)", paddingRight: "var(--space-4)" }}
-                >
-                  Add
-                </button>
-              </div>
 
-              {/* Task list */}
-              {tasks.length === 0 ? (
-                <p style={{
-                  fontSize: "var(--text-xs)", color: "var(--color-text-muted)",
-                  fontStyle: "italic", textAlign: "center", padding: "var(--space-3)",
-                  background: "var(--color-bg-surface-alt)", borderRadius: "var(--radius-md)",
-                }}>
-                  No tasks yet. Add at least one to proceed.
-                </p>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-                  {tasks.map((task, i) => (
-                    <div key={i} style={{
-                      display:        "flex",
-                      alignItems:     "center",
-                      justifyContent: "space-between",
-                      padding:        "var(--space-2) var(--space-3)",
-                      background:     "var(--color-bg-surface-alt)",
-                      borderRadius:   "var(--radius-md)",
-                      border:         "1px solid var(--color-border-default)",
-                    }}>
-                      <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-primary)" }}>
-                        {i + 1}. {task}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTask(i)}
-                        style={{
-                          color:    "var(--color-text-muted)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor:   "pointer",
-                          padding:  "var(--space-1)",
-                        }}
-                        aria-label={`Remove task: ${task}`}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                          stroke="currentColor" strokeWidth="2"
-                          strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
+          {/* -- Contact links -- */}
+          <div className="form-group">
+            <label className="form-label">Contact links</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+              {contactLinks.map((link, i) => (
+                <div key={i} style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
+                  <input
+                    className="form-input"
+                    type="text"
+                    placeholder="Label (e.g. WhatsApp)"
+                    value={link.label}
+                    onChange={(e) => updateContactLink(i, "label", e.target.value)}
+                    style={{ width: "36%", flexShrink: 0 }}
+                  />
+                  <input
+                    className="form-input"
+                    type="url"
+                    placeholder="https://…"
+                    value={link.url}
+                    onChange={(e) => updateContactLink(i, "url", e.target.value)}
+                    style={{ flex: 1 }}
+                  />
+                  {contactLinks.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeContactLink(i)}
+                      style={{
+                        flexShrink: 0, background: "none", border: "none",
+                        cursor: "pointer", color: "var(--color-text-muted)",
+                        padding: "4px", borderRadius: "var(--radius-sm)",
+                        display: "flex", alignItems: "center",
+                        transition: "color var(--transition-fast)",
+                      }}
+                      title="Remove"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
-          )}
+            <button
+              type="button"
+              onClick={addContactLink}
+              style={{
+                marginTop: "var(--space-2)",
+                background: "none", border: "1px dashed var(--color-border-default)",
+                borderRadius: "var(--radius-md)", cursor: "pointer",
+                color: "var(--color-primary)", fontSize: "var(--text-xs)",
+                fontWeight: "var(--font-medium)", padding: "var(--space-2) var(--space-3)",
+                display: "flex", alignItems: "center", gap: "var(--space-1)",
+                width: "100%", justifyContent: "center",
+                transition: "background var(--transition-fast)",
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Add another link
+            </button>
+            <span className="form-hint">e.g. WhatsApp, email, Instagram — shown to the client on their review page.</span>
+          </div>
 
           <div className="modal__footer">
             <button type="button" className="btn btn--ghost" onClick={onClose}>

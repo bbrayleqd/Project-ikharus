@@ -45,7 +45,7 @@ export default function RevisionChecklist({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
 
-      {/* ── Progress summary ── */}
+      {/* -- Progress summary -- */}
       <div className="card" style={{ padding: "var(--space-5)" }}>
         <div style={{
           display: "flex", justifyContent: "space-between", alignItems: "baseline",
@@ -92,7 +92,7 @@ export default function RevisionChecklist({
         </div>
       </div>
 
-      {/* ── Task checklist ── */}
+      {/* -- Task checklist -- */}
       <div className="card" style={{ padding: "var(--space-5)" }}>
         <p className="card-section-label">Tasks</p>
 

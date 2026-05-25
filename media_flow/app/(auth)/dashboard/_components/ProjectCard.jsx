@@ -131,7 +131,7 @@ export default function ProjectCard({ project, onClick, onEdit, onDelete }) {
       onKeyDown={(e) => e.key === "Enter" && onClick()}
       aria-label={`Open project ${project.name}`}
     >
-      {/* ── Actions menu (visible on hover via CSS) ── */}
+      {/* -- Actions menu (visible on hover via CSS) -- */}
       <div className="card-tile__actions">
         <button
           className="card-tile__btn"
@@ -149,7 +149,7 @@ export default function ProjectCard({ project, onClick, onEdit, onDelete }) {
         </button>
       </div>
 
-      {/* ── Thumbnail ── */}
+      {/* -- Thumbnail -- */}
       <div className="project-card__thumbnail">
         {project.mediaUrl ? (
           isImage ? (
@@ -212,7 +212,7 @@ export default function ProjectCard({ project, onClick, onEdit, onDelete }) {
         </div>
       </div>
 
-      {/* ── Meta ── */}
+      {/* -- Meta -- */}
       <div className="project-card__meta">
         <h3 className="project-card__name">{project.name}</h3>
         <p className="project-card__client">Client: {project.client}</p>
@@ -237,7 +237,7 @@ export default function ProjectCard({ project, onClick, onEdit, onDelete }) {
         )}
       </div>
 
-      {/* ── Footer ── */}
+      {/* -- Footer -- */}
       <div className="project-card__footer">
         <span className={statusBadgeClass(project.status)}>{project.status}</span>
         <span className="version-label">{project.version}</span>

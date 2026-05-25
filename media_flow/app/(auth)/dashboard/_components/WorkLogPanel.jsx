@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// --- Helpers -----------------------------------------------------------------
 
 function fmtDuration(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -16,7 +16,7 @@ function timeBasedProgress(loggedSeconds, maxSeconds) {
   return Math.min(100, Math.round((loggedSeconds / maxSeconds) * 100));
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// --- Component ----------------------------------------------------------------
 //
 // State is LIFTED — loggedSeconds and workLog live in the project object
 // inside page.js so they survive navigating back and forth to the dashboard.
@@ -70,7 +70,7 @@ export default function WorkLogPanel({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
 
-      {/* ── Progress summary ── */}
+      {/* -- Progress summary -- */}
       <div className="card" style={{ padding: "var(--space-5)" }}>
         <div style={{
           display:        "flex",
@@ -119,7 +119,7 @@ export default function WorkLogPanel({
         </div>
       </div>
 
-      {/* ── Add entry form ── */}
+      {/* -- Add entry form -- */}
       <div className="card" style={{ padding: "var(--space-5)" }}>
         <p className="card-section-label">Log work session</p>
 
@@ -170,11 +170,18 @@ export default function WorkLogPanel({
         </div>
       </div>
 
-      {/* ── Session history ── */}
+      {/* -- Session history -- */}
       {workLog.length > 0 && (
         <div className="card" style={{ padding: "var(--space-5)" }}>
           <p className="card-section-label">Session history</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+          <div style={{
+            display:   "flex",
+            flexDirection: "column",
+            gap:       "var(--space-2)",
+            maxHeight: "220px",
+            overflowY: "auto",
+            paddingRight: "var(--space-1)",
+          }}>
             {workLog.map((entry) => (
               <div
                 key={entry.id}
