@@ -121,7 +121,7 @@ export default function ImageViewer({ project, annotations = [] }) {
         lineHeight: 0,
         borderRadius: "var(--radius-xl)",
         overflow: "auto",
-        maxHeight: "100vh",
+        maxHeight: "70vh",
         border: "1px solid var(--color-border-default)",
         backgroundColor: "var(--color-bg-surface-alt)",
       }}>
