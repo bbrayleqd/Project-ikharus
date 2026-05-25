@@ -5,6 +5,9 @@ import './globals.css'
 export const metadata = {
   title: 'MediaFlow',
   description: 'Media project management for editors',
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({ children }) {

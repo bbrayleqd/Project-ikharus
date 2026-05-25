@@ -86,23 +86,43 @@ export default function Home() {
         justifyContent: 'center',
         alignItems: 'center',
         padding: '2rem',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
-        <h1 style={{
-          fontSize: '2.5rem',
-          fontWeight: 'var(--font-bold)',
-          color: 'var(--color-text-primary)',
-          marginBottom: '1rem',
-        }}>
-          Review. Annotate. Flow.
-        </h1>
-        <p style={{
-          color: 'var(--color-text-secondary)',
-          fontSize: 'var(--text-base)',
-          textAlign: 'center',
-          maxWidth: '300px',
-        }}>
-          The centralized bridge for editors and clients to perfect every frame.
-        </p>
+
+        {/* Background image — swap between light/dark variants */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: `url(${darkMode ? '/bg-dark.jpg' : '/bg-light.jpg'})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          opacity: 0.65,
+          filter: 'blur(4px)',
+          // Scale slightly so blurred edges don't show white fringe
+          transform: 'scale(1.05)',
+          transition: 'background-image 0.3s ease, opacity 0.3s ease',
+        }} />
+
+        {/* Content sits above the bg */}
+        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+          <h1 style={{
+            fontSize: '2.5rem',
+            fontWeight: 'var(--font-bold)',
+            color: 'var(--color-text-primary)',
+            marginBottom: '1rem',
+          }}>
+            Review. Annotate. Flow.
+          </h1>
+          <p style={{
+            color: 'var(--color-text-primary)',
+            fontSize: 'var(--text-base)',
+            textAlign: 'center',
+            maxWidth: '300px',
+          }}>
+            The centralized bridge for editors and clients to perfect every frame.
+          </p>
+        </div>
       </div>
 
       {/* Right Side - Login Panel */}

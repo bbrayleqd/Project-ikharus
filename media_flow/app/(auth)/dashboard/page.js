@@ -16,6 +16,7 @@ import EmptyState         from "./_components/EmptyState";
 import DeadlineItem       from "./_components/DeadlineItem";
 import CreateProjectModal from "./_components/CreateProjectModal";
 import EditorView         from "./_components/EditorView";
+import BrandLogo          from '../../components/BrandLogo'
 
 /* -- Icons ---------------------------------------------------------------- */
 function SunIcon() {
@@ -198,12 +199,7 @@ export default function DashboardPage() {
 
       <header className="app-header">
         <a href="/" className="app-header__logo" aria-label="MediaFlow home">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-            <circle cx="16" cy="16" r="15"
-              stroke="var(--color-primary)" strokeWidth="2"
-              fill="var(--color-primary-glow)" />
-            <path d="M13 10.5l8 5.5-8 5.5V10.5z" fill="var(--color-primary)" />
-          </svg>
+            <BrandLogo size={32} />
           <span>
             <span className="brand-media">Media</span>
             <span className="brand-flow">Flow</span>
