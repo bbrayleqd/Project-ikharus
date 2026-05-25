@@ -15,9 +15,9 @@ Step 4: Create the .env.local File
     The .env.local file wasnt pushed to GitHub because it contains secret keys. 
 
     Create a new file inside media_flow called .env.local
-    Paste the contents you send them which should be:
+    Paste the contents i send in messenger should look like: (i pinned it in messenger)
 
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_key_here  (i pinned it in messenger)
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_key_here  
     CLERK_SECRET_KEY=your_key_here
 
     NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
@@ -29,8 +29,12 @@ Step 4: Create the .env.local File
 
 Step 5: install cloudinary libraries 
     npm install next-cloudinary
+    npm install firebase 
+    or just do 
+    npm install 
 
 Step 5: Run the Project
+    cd media_flow
     bashnpm run dev
     Then open the browser and go to http://localhost:3000
 
