@@ -96,6 +96,7 @@ export default function DashboardPage() {
         maxRevisions:    formData.maxRevisions,
         maxDurationMins: formData.maxDurationMins,
         maxDurationSecs: formData.maxDurationSecs,
+        contactLinks:  formData.contactLinks ?? [],
       });
     } else {
       await addDoc(collection(db, "projects"), {
@@ -106,6 +107,7 @@ export default function DashboardPage() {
         maxRevisions:    formData.maxRevisions ?? 3,
         maxDurationMins: formData.maxDurationMins ?? 0,
         maxDurationSecs: formData.maxDurationSecs ?? 0,
+        contactLinks:  formData.contactLinks ?? [],
         progress:        0,
         loggedSeconds:   0,
         workLog:         [],

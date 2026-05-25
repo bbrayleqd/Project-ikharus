@@ -64,6 +64,15 @@ function CopyIcon() {
   );
 }
 
+function LinkIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+      <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+    </svg>
+  );
+}
+
 // --- Helpers -----------------------------------------------------------------
 
 function statusBadgeClass(status) {
@@ -92,7 +101,199 @@ function ProgressRing({ progress = 0, size = 40, stroke = 3 }) {
   );
 }
 
-// --- Annotation Todo List (editor side) --------------------------------------
+// --- Client Info Box --------------------------------------------------------
+
+function ClientInfoBox({ project, currentRevision, maxRevisions, statusBadgeClass }) {
+  const contactLinks = project.contactLinks ?? [];
+  
+  return (
+    <div className="card" style={{ padding: "var(--space-5)" }}>
+      <p className="card-section-label">Project details</p>
+      
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+        
+        {/* Client Name */}
+        <div>
+          <p style={{
+            fontSize: "var(--text-xs)", 
+            color: "var(--color-text-secondary)",
+            fontWeight: "var(--font-semibold)", 
+            margin: 0, 
+            marginBottom: "var(--space-1)",
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}>
+            Client
+          </p>
+          <p style={{
+            fontSize: "var(--text-base)", 
+            color: "var(--color-text-primary)",
+            fontWeight: "var(--font-medium)", 
+            margin: 0,
+          }}>
+            {project.client || "No client assigned"}
+          </p>
+        </div>
+
+        {/* Project Type */}
+        <div>
+          <p style={{
+            fontSize: "var(--text-xs)", 
+            color: "var(--color-text-secondary)",
+            fontWeight: "var(--font-semibold)", 
+            margin: 0, 
+            marginBottom: "var(--space-1)",
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}>
+            Type
+          </p>
+          <p style={{
+            fontSize: "var(--text-base)", 
+            color: "var(--color-text-primary)",
+            fontWeight: "var(--font-medium)", 
+            margin: 0,
+          }}>
+            {project.projectType === "image" ? "Image" : "Video"}
+          </p>
+        </div>
+
+        {/* Revisions */}
+        <div>
+          <p style={{
+            fontSize: "var(--text-xs)", 
+            color: "var(--color-text-secondary)",
+            fontWeight: "var(--font-semibold)", 
+            margin: 0, 
+            marginBottom: "var(--space-1)",
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}>
+            Revisions
+          </p>
+          <p style={{
+            fontSize: "var(--text-base)", 
+            color: "var(--color-text-primary)",
+            fontWeight: "var(--font-medium)", 
+            margin: 0,
+          }}>
+            {currentRevision} / {maxRevisions}
+          </p>
+        </div>
+
+        {/* Deadline */}
+        {project.deadline && (
+          <div>
+            <p style={{
+              fontSize: "var(--text-xs)", 
+              color: "var(--color-text-secondary)",
+              fontWeight: "var(--font-semibold)", 
+              margin: 0, 
+              marginBottom: "var(--space-1)",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+            }}>
+              Deadline
+            </p>
+            <p style={{
+              fontSize: "var(--text-base)", 
+              color: "var(--color-text-primary)",
+              fontWeight: "var(--font-medium)", 
+              margin: 0,
+            }}>
+              {new Date(project.deadline).toLocaleDateString()}
+            </p>
+          </div>
+        )}
+
+        {/* Status */}
+        <div>
+          <p style={{
+            fontSize: "var(--text-xs)", 
+            color: "var(--color-text-secondary)",
+            fontWeight: "var(--font-semibold)", 
+            margin: 0, 
+            marginBottom: "var(--space-1)",
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}>
+            Status
+          </p>
+          <span className={statusBadgeClass(project.status)}>
+            {project.status}
+          </span>
+        </div>
+
+        {/* Divider */}
+        {contactLinks.length > 0 && (
+          <div style={{
+            height: "1px",
+            background: "var(--color-border-default)",
+            margin: "var(--space-2) 0",
+          }}/>
+        )}
+
+        {/* Contact Links */}
+        {contactLinks.length > 0 && (
+          <div>
+            <p style={{
+              fontSize: "var(--text-xs)", 
+              color: "var(--color-text-secondary)",
+              fontWeight: "var(--font-semibold)", 
+              margin: 0, 
+              marginBottom: "var(--space-2)",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+            }}>
+              Contact
+            </p>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+              {contactLinks.map((link, i) => (
+                <a 
+                  key={i}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "var(--space-2)",
+                    padding: "var(--space-2) var(--space-3)",
+                    borderRadius: "var(--radius-md)",
+                    background: "var(--color-bg-surface-alt)",
+                    border: "1px solid var(--color-border-default)",
+                    color: "var(--color-primary)",
+                    textDecoration: "none",
+                    fontSize: "var(--text-xs)",
+                    fontWeight: "var(--font-medium)",
+                    transition: "all var(--transition-fast)",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "var(--color-primary)";
+                    e.currentTarget.style.background = "var(--color-primary-glow)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "var(--color-border-default)";
+                    e.currentTarget.style.background = "var(--color-bg-surface-alt)";
+                  }}
+                >
+                  <LinkIcon />
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {link.label}
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- Annotation Todo List (editor side) ------------------------------------
 
 function AnnotationTodo({ annotations, onToggleResolved }) {
   const total    = annotations.length;
@@ -245,7 +446,7 @@ function AnnotationTodo({ annotations, onToggleResolved }) {
   );
 }
 
-// --- Component ----------------------------------------------------------------
+// --- Main Component -------------------------------------------------------
 
 export default function EditorView({
   project,
@@ -257,7 +458,6 @@ export default function EditorView({
   const isImage         = project.projectType === "image";
   const isReadyToUpload = isImage ? true : project.progress >= 100;
 
-  // Revision starts at 0; first upload bumps to 1
   const [currentRevision,  setCurrentRevision]  = useState(project.currentRevision ?? 0);
   const [token,            setToken]             = useState(project.clientToken ?? null);
   const [copied,           setCopied]            = useState(false);
@@ -271,15 +471,12 @@ export default function EditorView({
       orderBy("createdAt", "asc")
     );
     const unsub = onSnapshot(q, (snap) => {
-      // Spread data first, then override id with the Firestore string doc ID.
-      // This prevents the locally-generated numeric id (Date.now()) stored
-      // inside the document from overriding the real Firestore document ID.
       setAnnotations(snap.docs.map((d) => ({ ...d.data(), id: d.id })));
     });
     return () => unsub();
   }, [project?.id]);
 
-  // Keep local revision in sync with project (in case of external update)
+  // Keep local revision in sync with project
   useEffect(() => {
     if (project.currentRevision !== undefined) {
       setCurrentRevision(project.currentRevision);
@@ -291,8 +488,7 @@ export default function EditorView({
     if (project.clientToken) setToken(project.clientToken);
   }, [project.clientToken]);
 
-  // currentRevision = number of times client has submitted feedback.
-  // Annotations are stored at revision = currentRevision (post-bump value after submit).
+  // Filter annotations by current revision
   const currentAnnotations = annotations.filter(
     (a) => (a.revision ?? 1) === currentRevision
   );
@@ -300,23 +496,17 @@ export default function EditorView({
   const resolvedTasks = currentAnnotations.filter(a => a.resolved).length;
   const allResolved   = totalTasks > 0 && resolvedTasks === totalTasks;
 
-  // Progress: task-based after media uploaded, work-log-based before
+  // Calculate progress
   const taskProgress = project.mediaUrl && totalTasks > 0
     ? Math.round((resolvedTasks / totalTasks) * 100)
     : project.progress ?? 0;
 
   const maxRevisions  = project.maxRevisions ?? 3;
-  // revisionsLeft: how many more client feedback rounds are allowed after this upload.
-  // currentRevision is how many rounds already submitted. If == maxRevisions, this is the final delivery.
   const revisionsLeft = maxRevisions - currentRevision;
-
-  // Upload is allowed when all tasks are resolved (or no tasks yet on first upload).
-  // Always allow the final delivery upload even when revisionsLeft === 0.
   const canUploadRevision = project.mediaUrl && allResolved && (revisionsLeft > 0 || currentRevision === maxRevisions);
 
   // --- Toggle annotation resolved -------------------------------------------
   const handleToggleResolved = async (annotationId, resolved) => {
-    // Guard: annotationId must be a non-empty string
     if (!annotationId || typeof annotationId !== "string") {
       console.error("Invalid annotationId:", annotationId);
       return;
@@ -335,9 +525,8 @@ export default function EditorView({
     }
   };
 
-  // --- Generate token (one per project, reuse if exists) --------------------
+  // --- Generate token ---
   const handleGenerateToken = async () => {
-    // If project already has a token, just show it
     if (project.clientToken) {
       setToken(project.clientToken);
       return;
@@ -357,7 +546,6 @@ export default function EditorView({
       createdAt:       serverTimestamp(),
     });
 
-    // Persist token on the project so it's permanent
     await updateDoc(doc(db, "projects", project.id), { clientToken: generated });
     setToken(generated);
   };
@@ -369,19 +557,16 @@ export default function EditorView({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // --- First upload — delegate to parent (dashboard handles project + token sync) ---
+  // --- Upload handlers ---
   const handleFirstUpload = (url) => {
     onMediaUploaded(url);
   };
 
-  // --- Upload next revision (bumps counter, unlocks client) -----------------
   const handleNextRevisionUploaded = async (url) => {
-  // Bump the revision immediately (will get synced from Firestore shortly)
-  setCurrentRevision(currentRevision + 1);
-  setAnnotations([]); // Clear old annotations
-  // Then update the project in the database
-  onMediaUploaded(url);
-};
+    setCurrentRevision(currentRevision + 1);
+    setAnnotations([]);
+    onMediaUploaded(url);
+  };
 
   const handleChecklistUpdate = (newProgress, updatedTasks) => {
     onProgressUpdate(newProgress, { tasks: updatedTasks });
@@ -393,8 +578,6 @@ export default function EditorView({
     : { resourceType: "video", clientAllowedFormats: ["mp4", "mov"] };
 
   const reviewUrl = token ? `${typeof window !== "undefined" ? window.location.origin : ""}/client/${token}` : null;
-
-  // Revision label: "0 of 3" before first upload, "1 of 3" after, etc.
   const revisionLabel = `${currentRevision} of ${maxRevisions}`;
 
   return (
@@ -437,7 +620,6 @@ export default function EditorView({
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-5)" }}>
-          {/* Revision counter */}
           <div style={{
             fontSize: "var(--text-xs)", color: "var(--color-text-secondary)",
             fontWeight: "var(--font-semibold)", textTransform: "uppercase", letterSpacing: "0.08em",
@@ -512,7 +694,6 @@ export default function EditorView({
                     )}
                   </CldUploadWidget>
                 ) : (
-                  /* Upload locked */
                   <div style={{
                     width: "100%", minHeight: "55vh", display: "flex", flexDirection: "column",
                     alignItems: "center", justifyContent: "center", gap: "var(--space-5)",
@@ -563,7 +744,7 @@ export default function EditorView({
             {/* -- Action buttons row -- */}
             <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap", alignItems: "center" }}>
 
-              {/* Generate / show token — only once */}
+              {/* Generate / show token */}
               {!token ? (
                 <button
                   className="btn btn--secondary"
@@ -609,7 +790,7 @@ export default function EditorView({
                 </div>
               )}
 
-              {/* Upload next revision — only when all tasks resolved */}
+              {/* Upload next revision */}
               {canUploadRevision && (
                 <CldUploadWidget
                   uploadPreset={uploadPreset}
@@ -642,7 +823,7 @@ export default function EditorView({
                 </span>
               )}
 
-              {/* Max revisions reached — only after final delivery upload */}
+              {/* Max revisions reached */}
               {project.mediaUrl && currentRevision > maxRevisions && (
                 <span className="badge badge--delivered" style={{ padding: "var(--space-2) var(--space-4)" }}>
                   Final delivery uploaded
@@ -653,6 +834,15 @@ export default function EditorView({
 
           {/* -- Right sidebar -- */}
           <aside style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)", minWidth: 0 }}>
+            
+            {/* Client Info Box - ALWAYS SHOW (before and after upload) */}
+            <ClientInfoBox 
+              project={project} 
+              currentRevision={currentRevision} 
+              maxRevisions={maxRevisions}
+              statusBadgeClass={statusBadgeClass}
+            />
+
             {!project.mediaUrl ? (
               isImage ? (
                 <RevisionChecklist
