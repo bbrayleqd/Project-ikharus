@@ -147,10 +147,22 @@ export default function DashboardPage() {
 
   const handleMediaUploaded = async (url) => {
     if (!selectedProject) return;
+    const nextRevision = (selectedProject.currentRevision ?? 0) + 1;
     await updateDoc(doc(db, "projects", selectedProject.id), {
-      mediaUrl: url,
-      status:   "Needs Action",
+      mediaUrl:        url,
+      currentRevision: nextRevision,
+      status:          "Needs Action",
     });
+    // Sync the client token so client sees new media immediately
+    if (selectedProject.clientToken) {
+      try {
+        await updateDoc(doc(db, "tokens", selectedProject.clientToken), {
+          mediaUrl:          url,
+          currentRevision:   nextRevision,
+          clientSubmittedAt: null,
+        });
+      } catch (e) { console.error("Token sync failed:", e); }
+    }
     setView("dashboard");
   };
 

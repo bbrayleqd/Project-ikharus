@@ -147,6 +147,7 @@ html {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  height: 100%;
 }
 
 body {
@@ -158,6 +159,7 @@ body {
   background-color: var(--color-bg-page);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  min-height: 100%;
 }
 
 img, video, svg {
@@ -227,6 +229,7 @@ ul, ol {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Top Navigation Bar */
@@ -271,6 +274,7 @@ ul, ol {
   max-width: var(--content-max-width);
   width: 100%;
   margin: 0 auto;
+  min-height: 0;
 }
 
 /* Two-column layout used on both Dashboard and Review pages */

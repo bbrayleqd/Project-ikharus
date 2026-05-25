@@ -83,74 +83,103 @@ function ProgressRing({ progress = 0, size = 52, stroke = 4 }) {
 function ConfirmSubmitModal({ annotationCount, onConfirm, onCancel }) {
   return (
     <div style={{
-      position:       "fixed",
-      inset:          0,
-      background:     "rgba(0,0,0,0.55)",
-      display:        "flex",
-      alignItems:     "center",
-      justifyContent: "center",
-      zIndex:         999,
-      padding:        "var(--space-4)",
+      position: "fixed", inset: 0, zIndex: 999,
+      background: "rgba(0,0,0,0.65)",
+      backdropFilter: "blur(6px)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "var(--space-4)",
     }}>
       <div style={{
-        background:   "var(--color-bg-surface)",
+        background: "var(--color-bg-surface)",
         borderRadius: "var(--radius-xl)",
-        border:       "1px solid var(--color-border-default)",
-        padding:      "var(--space-7)",
-        maxWidth:     420,
-        width:        "100%",
-        display:      "flex",
-        flexDirection:"column",
-        gap:          "var(--space-4)",
-        boxShadow:    "0 24px 64px rgba(0,0,0,0.3)",
+        border: "2px solid rgba(234,88,12,0.45)",
+        maxWidth: 460, width: "100%",
+        boxShadow: "0 0 0 1px rgba(234,88,12,0.12), 0 32px 80px rgba(0,0,0,0.40)",
+        overflow: "hidden",
       }}>
-        <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "flex-start" }}>
+        {/* Top accent bar */}
+        <div style={{ height: 5, background: "linear-gradient(90deg, #C2410C, #EA580C, #FB923C)" }} />
+
+        <div style={{ padding: "var(--space-7)", display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
+
+          {/* Icon + heading */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "var(--space-3)", textAlign: "center" }}>
+            <div style={{
+              width: 60, height: 60, borderRadius: "var(--radius-full)",
+              background: "rgba(234,88,12,0.12)",
+              border: "2px solid rgba(234,88,12,0.3)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+                stroke="#EA580C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/>
+              </svg>
+            </div>
+            <div>
+              <p style={{
+                fontSize: "var(--text-xl)", fontWeight: "var(--font-semibold)",
+                color: "var(--color-text-primary)", margin: 0,
+              }}>
+                Submit feedback?
+              </p>
+              <p style={{
+                fontSize: "var(--text-sm)", color: "var(--color-text-secondary)",
+                marginTop: "var(--space-1)", lineHeight: "1.6",
+              }}>
+                You have{" "}
+                <span style={{ fontWeight: "var(--font-semibold)", color: "var(--color-text-primary)" }}>
+                  {annotationCount} annotation{annotationCount !== 1 ? "s" : ""}
+                </span>{" "}ready to send to your editor.
+              </p>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: "var(--color-border-default)" }} />
+
+          {/* Warning box */}
           <div style={{
-            width: 40, height: 40, borderRadius: "var(--radius-full)",
-            background: "rgba(234,88,12,0.12)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
+            display: "flex", gap: "var(--space-3)", alignItems: "flex-start",
+            background: "rgba(234,88,12,0.07)",
+            border: "1.5px solid rgba(234,88,12,0.3)",
+            borderRadius: "var(--radius-lg)", padding: "var(--space-4)",
           }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-              stroke="#EA580C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="#EA580C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              style={{ flexShrink: 0, marginTop: 1 }}>
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
-          </div>
-          <div>
-            <p style={{ fontWeight: "var(--font-semibold)", color: "var(--color-text-primary)", fontSize: "var(--text-base)", marginBottom: "var(--space-1)" }}>
-              Submit feedback?
-            </p>
-            <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)", lineHeight: "1.55" }}>
-              You have <strong>{annotationCount}</strong> annotation{annotationCount !== 1 ? "s" : ""} ready to submit.
-              Once submitted, <strong>you cannot add more annotations</strong> until your editor uploads the next revision.
+            <p style={{ fontSize: "var(--text-sm)", color: "#EA580C", lineHeight: "1.55", margin: 0 }}>
+              Once submitted, <strong>annotation tools will be locked</strong> until your editor uploads the next revision.
             </p>
           </div>
-        </div>
 
-        <div style={{
-          background:   "rgba(234,88,12,0.08)",
-          border:       "1px solid rgba(234,88,12,0.25)",
-          borderRadius: "var(--radius-md)",
-          padding:      "var(--space-3) var(--space-4)",
-          fontSize:     "var(--text-xs)",
-          color:        "#EA580C",
-          fontWeight:   "var(--font-medium)",
-        }}>
-          ⚠️ After submitting, annotation tools will be locked until the next draft is uploaded.
-        </div>
-
-        <div style={{ display: "flex", gap: "var(--space-3)", justifyContent: "flex-end" }}>
-          <button className="btn btn--ghost" onClick={onCancel}>
-            Cancel
-          </button>
-          <button
-            className="btn btn--primary"
-            onClick={onConfirm}
-            style={{ background: "#EA580C", borderColor: "#EA580C" }}
-          >
-            Yes, submit feedback
-          </button>
+          {/* Action buttons */}
+          <div style={{ display: "flex", gap: "var(--space-3)" }}>
+            <button
+              className="btn btn--ghost"
+              onClick={onCancel}
+              style={{ flex: 1, justifyContent: "center", border: "1.5px solid var(--color-border-default)" }}
+            >
+              Cancel
+            </button>
+            <button
+              className="btn btn--primary"
+              onClick={onConfirm}
+              style={{
+                flex: 1, justifyContent: "center",
+                background: "#EA580C", borderColor: "#EA580C",
+                display: "flex", alignItems: "center", gap: "var(--space-2)",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/>
+              </svg>
+              Send feedback
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -237,7 +266,22 @@ export default function ClientReviewPage({ params }) {
     loadToken();
   }, [token]);
 
-  /* -- Subscribe to project doc in real-time (progress, mediaUrl, etc.) - */
+  /* -- Subscribe to token doc live (catches mediaUrl updates from editor) -- */
+  useEffect(() => {
+    if (!token) return;
+    const unsub = onSnapshot(doc(db, "tokens", token), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setTokenData(data);
+        setSubmitted(!!data.clientSubmittedAt);
+        setIsFinal(!!data.markedFinal);
+        setCurrentRevision(data.currentRevision ?? 0);
+      }
+    });
+    return () => unsub();
+  }, [token]);
+
+  /* -- Subscribe to project doc in real-time (progress, status, etc.) -- */
   useEffect(() => {
     if (!tokenData?.projectId) return;
     const unsub = onSnapshot(doc(db, "projects", tokenData.projectId), (snap) => {
@@ -254,23 +298,31 @@ export default function ClientReviewPage({ params }) {
       orderBy("createdAt", "asc")
     );
     const unsub = onSnapshot(q, (snap) => {
-      setAnnotations(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      // Spread data first, then override id with the Firestore string doc ID.
+      // Prevents the locally-generated numeric id stored in the document from
+      // overriding the real Firestore document ID.
+      setAnnotations(snap.docs.map((d) => ({ ...d.data(), id: d.id })));
     });
     return () => unsub();
   }, [tokenData?.projectId]);
 
   /* -- Current revision annotations (only this round) ------------------- */
   const currentRevisionAnnotations = annotations.filter(
-    (a) => (a.revision ?? 1) === currentRevision
+    (a) => (a.revision ?? 1) === (currentRevision || 1)
   );
 
   /* -- Save annotation to Firestore ------------------------------------- */
   const handleAnnotationSave = async (annotation) => {
     if (!tokenData?.projectId || submitted || isFinal) return;
+    // Strip the locally-generated numeric id — Firestore will assign its own
+    // string document ID. Keeping the numeric id would overwrite the real doc
+    // ID when the snapshot is read back with { ...d.data(), id: d.id }.
+    // eslint-disable-next-line no-unused-vars
+    const { id: _localId, ...annotationData } = annotation;
     await addDoc(
       collection(db, "projects", tokenData.projectId, "annotations"),
       {
-        ...annotation,
+        ...annotationData,
         token,
         revision:  currentRevision,
         createdAt: serverTimestamp(),
@@ -312,9 +364,9 @@ export default function ClientReviewPage({ params }) {
 
   /* -- Download --------------------------------------------------------- */
   const handleDownload = async () => {
-    if (!isFinal || !tokenData?.mediaUrl) return;
+    if (!isFinal || !mediaUrl) return;
     const link = document.createElement("a");
-    link.href = tokenData.mediaUrl;
+    link.href = mediaUrl;
     link.download = `${tokenData.projectName || "file"}_final`;
     link.target = "_blank";
     link.click();
@@ -323,7 +375,9 @@ export default function ClientReviewPage({ params }) {
   /* -- Derived ---------------------------------------------------------- */
   const maxRevisions   = projectData?.maxRevisions ?? tokenData?.maxRevisions ?? 3;
   const reachedMax     = currentRevision >= maxRevisions && submitted;
-  const canAnnotate    = !!tokenData?.mediaUrl && !submitted && !isFinal && !reachedMax;
+  // Use projectData.mediaUrl as source of truth (most up to date), fall back to token
+  const mediaUrl       = projectData?.mediaUrl ?? tokenData?.mediaUrl ?? null;
+  const canAnnotate    = !!mediaUrl && !submitted && !isFinal && !reachedMax;
   const annotationCount = currentRevisionAnnotations.length;
 
   // Task-based progress: annotations submitted = tasks for editor
@@ -418,7 +472,7 @@ export default function ClientReviewPage({ params }) {
             <span className="badge badge--delivered">✓ Final</span>
           ) : submitted ? (
             <span className="badge badge--needs-action">Awaiting revision</span>
-          ) : tokenData.mediaUrl ? (
+          ) : mediaUrl ? (
             <span className="badge badge--draft">Draft ready</span>
           ) : (
             <span className="badge badge--draft">
@@ -427,7 +481,7 @@ export default function ClientReviewPage({ params }) {
           )}
 
           {/* Progress bar */}
-          {tokenData.mediaUrl && (
+          {mediaUrl && (
             <div style={{ width: 120 }}>
               <div className="header-progress__bar">
                 <div
@@ -455,12 +509,12 @@ export default function ClientReviewPage({ params }) {
       </header>
 
       {/* -- Main -- */}
-      <main className="app-main">
+      <main className="app-main" style={{ overflowY: "auto" }}>
         <div className="editor-grid">
 
           {/* -- Left: annotator (scrollable) -- */}
-          <div style={{ minWidth: 0, overflowY: "auto", maxHeight: "calc(100vh - 80px)" }}>
-            {!tokenData.mediaUrl ? (
+          <div style={{ minWidth: 0 }}>
+            {!mediaUrl ? (
               <div className="card" style={{
                 display: "flex", flexDirection: "column",
                 alignItems: "center", justifyContent: "center",
@@ -505,7 +559,7 @@ export default function ClientReviewPage({ params }) {
               </div>
             ) : isVideo ? (
               <VideoAnnotator
-                videoUrl={tokenData.mediaUrl}
+                videoUrl={mediaUrl}
                 projectName={tokenData.projectName}
                 clientName={tokenData.client}
                 annotations={currentRevisionAnnotations}
@@ -519,7 +573,7 @@ export default function ClientReviewPage({ params }) {
               />
             ) : (
               <ImageAnnotator
-                imageUrl={tokenData.mediaUrl}
+                imageUrl={mediaUrl}
                 projectName={tokenData.projectName}
                 annotations={currentRevisionAnnotations}
                 onAnnotationSave={handleAnnotationSave}
@@ -604,7 +658,7 @@ export default function ClientReviewPage({ params }) {
             )}
 
             {/* Action card */}
-            {tokenData.mediaUrl && (
+            {mediaUrl && (
               <div className="card">
                 {isFinal ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)", textAlign: "center" }}>

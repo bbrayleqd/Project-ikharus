@@ -45,6 +45,25 @@ function CheckIcon() {
   );
 }
 
+function UploadIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/>
+      <polyline points="16 6 12 2 8 6"/>
+      <line x1="12" y1="2" x2="12" y2="14"/>
+    </svg>
+  );
+}
+
+function CopyIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+    </svg>
+  );
+}
+
 // --- Helpers -----------------------------------------------------------------
 
 function statusBadgeClass(status) {
@@ -73,9 +92,9 @@ function ProgressRing({ progress = 0, size = 40, stroke = 3 }) {
   );
 }
 
-// --- Annotation Todo List (editor side) ------------------------------------
+// --- Annotation Todo List (editor side) --------------------------------------
 
-function AnnotationTodo({ annotations, onToggleResolved, onAllDone }) {
+function AnnotationTodo({ annotations, onToggleResolved }) {
   const total    = annotations.length;
   const resolved = annotations.filter(a => a.resolved).length;
   const allDone  = total > 0 && resolved === total;
@@ -119,14 +138,19 @@ function AnnotationTodo({ annotations, onToggleResolved, onAllDone }) {
         </div>
 
         <p style={{ marginTop: "var(--space-2)", fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>
-          {allDone ? "✓ All feedback addressed — ready to upload next revision" : `${total - resolved} remaining`}
+          {allDone
+            ? "✓ All feedback addressed — ready to upload next revision"
+            : `${total - resolved} item${total - resolved !== 1 ? "s" : ""} remaining`}
         </p>
       </div>
 
-      {/* Annotation checklist */}
+      {/* Checklist — scrollable */}
       <div className="card" style={{ padding: "var(--space-5)" }}>
         <p className="card-section-label">Feedback to address</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", maxHeight: 340, overflowY: "auto", paddingRight: "var(--space-1)" }}>
+        <div style={{
+          display: "flex", flexDirection: "column", gap: "var(--space-2)",
+          maxHeight: 380, overflowY: "auto", paddingRight: "var(--space-1)",
+        }}>
           {annotations.map((ann, i) => (
             <div
               key={ann.id}
@@ -146,7 +170,7 @@ function AnnotationTodo({ annotations, onToggleResolved, onAllDone }) {
                   border: `2px solid ${ann.resolved ? "var(--color-primary)" : "var(--color-border-default)"}`,
                   background: ann.resolved ? "var(--color-primary)" : "transparent",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer", transition: "all var(--transition-fast)",
+                  cursor: "pointer", transition: "all var(--transition-fast)", marginTop: 2,
                 }}
               >
                 {ann.resolved && <CheckIcon />}
@@ -154,7 +178,6 @@ function AnnotationTodo({ annotations, onToggleResolved, onAllDone }) {
 
               {/* Content */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                {/* Timestamp/type badge */}
                 {ann.type === "frame" && (
                   <span style={{
                     display: "inline-block", marginBottom: "var(--space-1)",
@@ -162,7 +185,9 @@ function AnnotationTodo({ annotations, onToggleResolved, onAllDone }) {
                     background: "rgba(229,62,62,0.1)", color: "#E53E3E",
                     fontSize: "10px", fontWeight: "var(--font-semibold)", fontVariantNumeric: "tabular-nums",
                   }}>
-                    {ann.at !== undefined ? `Frame ${Math.floor(ann.at / 60)}:${String(Math.floor(ann.at % 60)).padStart(2,"0")}` : "Frame"}
+                    {ann.at !== undefined
+                      ? `${Math.floor(ann.at / 60)}:${String(Math.floor(ann.at % 60)).padStart(2, "0")}`
+                      : "Frame"}
                   </span>
                 )}
                 {ann.type === "range" && (
@@ -173,7 +198,7 @@ function AnnotationTodo({ annotations, onToggleResolved, onAllDone }) {
                     fontSize: "10px", fontWeight: "var(--font-semibold)", fontVariantNumeric: "tabular-nums",
                   }}>
                     {ann.start !== undefined
-                      ? `${Math.floor(ann.start/60)}:${String(Math.floor(ann.start%60)).padStart(2,"0")} → ${Math.floor(ann.end/60)}:${String(Math.floor(ann.end%60)).padStart(2,"0")}`
+                      ? `${Math.floor(ann.start / 60)}:${String(Math.floor(ann.start % 60)).padStart(2, "0")} → ${Math.floor(ann.end / 60)}:${String(Math.floor(ann.end % 60)).padStart(2, "0")}`
                       : "Range"}
                   </span>
                 )}
@@ -194,12 +219,12 @@ function AnnotationTodo({ annotations, onToggleResolved, onAllDone }) {
                   }}>Pin #{i + 1}</span>
                 )}
                 <p style={{
-                  fontSize: "var(--text-sm)", color: ann.resolved
-                    ? "var(--color-text-muted)"
-                    : "var(--color-text-primary)",
+                  fontSize: "var(--text-sm)",
+                  color: ann.resolved ? "var(--color-text-muted)" : "var(--color-text-primary)",
                   lineHeight: "var(--leading-relaxed)",
                   textDecoration: ann.resolved ? "line-through" : "none",
                   transition: "all var(--transition-fast)",
+                  margin: 0,
                 }}>
                   {ann.comment}
                 </p>
@@ -208,7 +233,7 @@ function AnnotationTodo({ annotations, onToggleResolved, onAllDone }) {
               {ann.resolved && (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                   stroke="var(--color-status-delivered-text)" strokeWidth="2"
-                  strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
               )}
@@ -231,11 +256,14 @@ export default function EditorView({
   const { darkMode, toggleDarkMode } = useTheme();
   const isImage         = project.projectType === "image";
   const isReadyToUpload = isImage ? true : project.progress >= 100;
-  const [token, setToken]           = useState(null);
-  const [annotations, setAnnotations] = useState([]);
-  const [currentRevision, setCurrentRevision] = useState(project.currentRevision ?? 1);
 
-  // -- Subscribe to client annotations in real-time ----------------------
+  // Revision starts at 0; first upload bumps to 1
+  const [currentRevision,  setCurrentRevision]  = useState(project.currentRevision ?? 0);
+  const [token,            setToken]             = useState(project.clientToken ?? null);
+  const [copied,           setCopied]            = useState(false);
+  const [annotations,      setAnnotations]       = useState([]);
+
+  // Subscribe to annotations subcollection
   useEffect(() => {
     if (!project?.id) return;
     const q = query(
@@ -243,75 +271,107 @@ export default function EditorView({
       orderBy("createdAt", "asc")
     );
     const unsub = onSnapshot(q, (snap) => {
-      setAnnotations(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      // Spread data first, then override id with the Firestore string doc ID.
+      // This prevents the locally-generated numeric id (Date.now()) stored
+      // inside the document from overriding the real Firestore document ID.
+      setAnnotations(snap.docs.map((d) => ({ ...d.data(), id: d.id })));
     });
     return () => unsub();
   }, [project?.id]);
 
-  // Current revision annotations
+  // Keep local revision in sync with project (in case of external update)
+  useEffect(() => {
+    if (project.currentRevision !== undefined) {
+      setCurrentRevision(project.currentRevision);
+    }
+  }, [project.currentRevision]);
+
+  // Keep token in sync with project
+  useEffect(() => {
+    if (project.clientToken) setToken(project.clientToken);
+  }, [project.clientToken]);
+
+  // Current revision annotations only
   const currentAnnotations = annotations.filter(
     (a) => (a.revision ?? 1) === currentRevision
   );
   const totalTasks    = currentAnnotations.length;
   const resolvedTasks = currentAnnotations.filter(a => a.resolved).length;
   const allResolved   = totalTasks > 0 && resolvedTasks === totalTasks;
-  // Task-based progress: resolved/total
-  const taskProgress  = project.mediaUrl && totalTasks > 0
-    ? Math.round((resolvedTasks / totalTasks) * 100)
-    : project.progress;
 
-  // Toggle annotation resolved state
+  // Progress: task-based after media uploaded, work-log-based before
+  const taskProgress = project.mediaUrl && totalTasks > 0
+    ? Math.round((resolvedTasks / totalTasks) * 100)
+    : project.progress ?? 0;
+
+  const maxRevisions  = project.maxRevisions ?? 3;
+  const revisionsLeft = maxRevisions - currentRevision;
+
+  // Upload is allowed only when all tasks are resolved (or no tasks yet)
+  const canUploadRevision = project.mediaUrl && allResolved && revisionsLeft > 0;
+
+  // --- Toggle annotation resolved -------------------------------------------
   const handleToggleResolved = async (annotationId, resolved) => {
+    // Guard: annotationId must be a non-empty string
+    if (!annotationId || typeof annotationId !== "string") {
+      console.error("Invalid annotationId:", annotationId);
+      return;
+    }
+    if (!project?.id || typeof project.id !== "string") {
+      console.error("Invalid project.id:", project?.id);
+      return;
+    }
     try {
       await updateDoc(
         doc(db, "projects", project.id, "annotations", annotationId),
         { resolved }
       );
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Toggle resolved failed:", e);
+    }
   };
 
+  // --- Generate token (one per project, reuse if exists) --------------------
   const handleGenerateToken = async () => {
-    const clientSlug = project.client.toLowerCase().replace(/\s+/g, "");
+    // If project already has a token, just show it
+    if (project.clientToken) {
+      setToken(project.clientToken);
+      return;
+    }
+    const clientSlug = (project.client ?? "client").toLowerCase().replace(/\s+/g, "");
     const generated  = `${clientSlug}_${Math.random().toString(36).slice(2, 8)}`;
-    const reviewUrl  = `${window.location.origin}/client/${generated}`;
 
     await setDoc(doc(db, "tokens", generated), {
       projectId:       project.id,
       projectName:     project.name,
       client:          project.client,
       projectType:     project.projectType,
-      progress:        project.progress,
-      mediaUrl:        project.mediaUrl,
-      maxRevisions:    project.maxRevisions,
+      progress:        project.progress ?? 0,
+      mediaUrl:        project.mediaUrl ?? null,
+      maxRevisions:    maxRevisions,
       currentRevision: currentRevision,
       createdAt:       serverTimestamp(),
     });
 
-    navigator.clipboard?.writeText(reviewUrl).catch(() => {});
+    // Persist token on the project so it's permanent
+    await updateDoc(doc(db, "projects", project.id), { clientToken: generated });
     setToken(generated);
   };
 
-  // Upload next revision — bumps revision counter and resets clientSubmittedAt
-  const handleNextRevisionUploaded = async (url) => {
-    const nextRevision = currentRevision + 1;
-    setCurrentRevision(nextRevision);
+  const handleCopyLink = () => {
+    if (!token) return;
+    navigator.clipboard?.writeText(`${window.location.origin}/client/${token}`).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-    // Update project
-    await updateDoc(doc(db, "projects", project.id), {
-      mediaUrl:        url,
-      currentRevision: nextRevision,
-      status:          "Delivered",
-    });
+  // --- First upload — delegate to parent (dashboard handles project + token sync) ---
+  const handleFirstUpload = (url) => {
+    onMediaUploaded(url);
+  };
 
-    // Update the active token if any
-    if (token) {
-      await updateDoc(doc(db, "tokens", token), {
-        mediaUrl:          url,
-        currentRevision:   nextRevision,
-        clientSubmittedAt: null,   // unlock client annotations
-      });
-    }
-
+  // --- Upload next revision (bumps counter, unlocks client) -----------------
+  const handleNextRevisionUploaded = (url) => {
     onMediaUploaded(url);
   };
 
@@ -319,15 +379,15 @@ export default function EditorView({
     onProgressUpdate(newProgress, { tasks: updatedTasks });
   };
 
-  // Is upload of next revision unlocked?
-  const maxRevisions    = project.maxRevisions ?? 3;
-  const revisionsLeft   = maxRevisions - currentRevision;
-  const canUploadNext   = project.mediaUrl && (allResolved || totalTasks === 0) && revisionsLeft > 0;
-
   const uploadPreset  = "mediaflow_unsigned";
   const uploadOptions = isImage
     ? { resourceType: "image", clientAllowedFormats: ["jpg", "jpeg", "png", "webp"] }
     : { resourceType: "video", clientAllowedFormats: ["mp4", "mov"] };
+
+  const reviewUrl = token ? `${typeof window !== "undefined" ? window.location.origin : ""}/client/${token}` : null;
+
+  // Revision label: "0 of 3" before first upload, "1 of 3" after, etc.
+  const revisionLabel = `${currentRevision} of ${maxRevisions}`;
 
   return (
     <div className="app-shell">
@@ -345,7 +405,6 @@ export default function EditorView({
           </span>
 
           <span style={{
-            display: "flex", alignItems: "center", gap: "var(--space-1)",
             padding: "2px 10px", borderRadius: "var(--radius-full)",
             background: isImage ? "rgba(124,58,237,0.1)" : "var(--color-primary-glow)",
             color: isImage ? "#7C3AED" : "var(--color-primary)",
@@ -357,7 +416,7 @@ export default function EditorView({
           <span className={statusBadgeClass(project.status)}>{project.status}</span>
         </div>
 
-        {/* Progress bar (task-based when media uploaded) */}
+        {/* Progress bar */}
         <div className="header-progress" style={{ flex: 1, maxWidth: 300, margin: "0 var(--space-8)" }}>
           <div className="header-progress__bar">
             <div className="header-progress__fill" style={{
@@ -369,24 +428,15 @@ export default function EditorView({
           <span className="header-progress__pct">{taskProgress}%</span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-6)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-5)" }}>
           {/* Revision counter */}
-          <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", fontWeight: "var(--font-semibold)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Rev {currentRevision} / {maxRevisions}
+          <div style={{
+            fontSize: "var(--text-xs)", color: "var(--color-text-secondary)",
+            fontWeight: "var(--font-semibold)", textTransform: "uppercase", letterSpacing: "0.08em",
+            whiteSpace: "nowrap",
+          }}>
+            Rev {revisionLabel}
           </div>
-
-          {/* Progress ring */}
-          {project.mediaUrl && (
-            <div style={{ position: "relative", width: 40, height: 40 }}>
-              <ProgressRing progress={taskProgress} />
-              <span style={{
-                position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "9px", fontWeight: "bold", color: "var(--color-text-primary)",
-              }}>
-                {taskProgress}%
-              </span>
-            </div>
-          )}
 
           <button
             onClick={toggleDarkMode}
@@ -402,34 +452,31 @@ export default function EditorView({
             <span>{darkMode ? "Light" : "Dark"}</span>
           </button>
 
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <UserButton afterSignOutUrl="/" />
-          </div>
+          <UserButton afterSignOutUrl="/" />
         </div>
       </header>
 
-      {/* -- Body -- */}
-      <main className="app-main">
-        <div style={{
-          display: "grid", gridTemplateColumns: "1fr 320px",
-          gap: "var(--space-6)", alignItems: "start",
-        }} className="editor-grid">
+      {/* -- Body: scrollable -- */}
+      <main className="app-main" style={{ overflowY: "auto" }}>
+        <div className="editor-grid">
 
           {/* -- Left: media area -- */}
-          <div>
-            <div className="card" style={{ padding: 0, marginBottom: "var(--space-4)" }}>
+          <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+
+            {/* Media card */}
+            <div className="card" style={{ padding: 0, overflow: "hidden" }}>
               {!project.mediaUrl ? (
                 isReadyToUpload ? (
                   <CldUploadWidget
                     uploadPreset={uploadPreset}
                     options={uploadOptions}
-                    onSuccess={(res) => onMediaUploaded(res.info.secure_url)}
+                    onSuccess={(res) => handleFirstUpload(res.info.secure_url)}
                   >
                     {({ open }) => (
                       <button
                         onClick={() => open()}
                         style={{
-                          width: "100%", height: "100%", minHeight: "55vh",
+                          width: "100%", minHeight: "55vh",
                           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                           gap: "var(--space-4)",
                           background: isImage ? "rgba(124,58,237,0.07)" : "var(--color-primary-glow)",
@@ -443,24 +490,21 @@ export default function EditorView({
                           background: isImage ? "#7C3AED" : "var(--color-primary)",
                           display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
                         }}>
-                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/>
-                            <polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="14"/>
-                          </svg>
+                          <UploadIcon />
                         </div>
                         <div style={{ textAlign: "center" }}>
                           <p style={{ fontWeight: "var(--font-semibold)", color: isImage ? "#7C3AED" : "var(--color-primary)", fontSize: "var(--text-lg)" }}>
-                            Upload v{currentRevision} {isImage ? "image" : "draft"}
+                            Upload first {isImage ? "image" : "draft"}
                           </p>
                           <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
-                            {isImage ? "JPG, PNG, WEBP supported" : "MP4 supported"}
+                            {isImage ? "JPG, PNG, WEBP supported" : "MP4, MOV supported"}
                           </p>
                         </div>
                       </button>
                     )}
                   </CldUploadWidget>
                 ) : (
-                  /* Upload locked — work log not complete */
+                  /* Upload locked */
                   <div style={{
                     width: "100%", minHeight: "55vh", display: "flex", flexDirection: "column",
                     alignItems: "center", justifyContent: "center", gap: "var(--space-5)",
@@ -486,73 +530,79 @@ export default function EditorView({
                       borderRadius: "var(--radius-lg)", padding: "var(--space-3) var(--space-5)",
                     }}>
                       <div style={{ position: "relative", width: 40, height: 40 }}>
-                        <ProgressRing progress={project.progress}/>
+                        <ProgressRing progress={project.progress ?? 0}/>
                         <span style={{
                           position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: "9px", fontWeight: "bold", color: "var(--color-text-primary)",
-                        }}>{project.progress}%</span>
+                        }}>{project.progress ?? 0}%</span>
                       </div>
                       <div>
-                        <p style={{ fontSize: "var(--text-sm)", fontWeight: "var(--font-medium)", color: "var(--color-text-primary)" }}>{project.progress}% complete</p>
+                        <p style={{ fontSize: "var(--text-sm)", fontWeight: "var(--font-medium)", color: "var(--color-text-primary)" }}>{project.progress ?? 0}% complete</p>
                         <p style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>Log more work on the right →</p>
                       </div>
                     </div>
                   </div>
                 )
+              ) : isImage ? (
+                <div style={{ padding: "var(--space-4)" }}>
+                  <ImageViewer project={project} annotations={currentAnnotations}/>
+                </div>
               ) : (
-                /* Media uploaded — show viewer */
-                isImage ? (
-                  <div style={{ padding: "var(--space-4)" }}>
-                    <ImageViewer project={project} annotations={currentAnnotations}/>
-                  </div>
-                ) : (
-                  <VideoViewer project={project} annotations={currentAnnotations}/>
-                )
+                <VideoViewer project={project} annotations={currentAnnotations}/>
               )}
             </div>
 
-            {/* -- Action buttons -- */}
-            <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap", alignItems: "center", marginTop: "var(--space-4)" }}>
-              <button
-                className="btn btn--secondary"
-                onClick={handleGenerateToken}
-                style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
-                </svg>
-                {token ? "Regenerate token" : "Generate token"}
-              </button>
+            {/* -- Action buttons row -- */}
+            <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap", alignItems: "center" }}>
 
-              {token && (
+              {/* Generate / show token — only once */}
+              {!token ? (
+                <button
+                  className="btn btn--secondary"
+                  onClick={handleGenerateToken}
+                  style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                  </svg>
+                  Generate client link
+                </button>
+              ) : (
                 <div style={{
                   display: "flex", alignItems: "center", gap: "var(--space-2)",
                   padding: "var(--space-2) var(--space-3)",
                   background: "var(--color-bg-surface-alt)", border: "1px solid var(--color-border-default)",
-                  borderRadius: "var(--radius-md)", flex: 1, minWidth: 0,
+                  borderRadius: "var(--radius-md)", flex: 1, minWidth: 0, maxWidth: 420,
                 }}>
                   <code style={{
                     fontSize: "var(--text-xs)", color: "var(--color-primary)",
                     fontFamily: "var(--font-mono)", overflow: "hidden",
                     textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1,
                   }}>
-                    {window.location.origin}/client/{token}
+                    {reviewUrl}
                   </code>
                   <button
-                    onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/client/${token}`)}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-text-muted)", padding: "2px", display: "flex", flexShrink: 0 }}
+                    onClick={handleCopyLink}
+                    style={{
+                      background: copied ? "var(--color-primary)" : "none",
+                      border: "none", cursor: "pointer",
+                      color: copied ? "#fff" : "var(--color-text-muted)",
+                      padding: "4px 8px", borderRadius: "var(--radius-sm)",
+                      display: "flex", alignItems: "center", gap: "4px",
+                      fontSize: "11px", fontWeight: "var(--font-medium)",
+                      transition: "all var(--transition-fast)", flexShrink: 0,
+                    }}
                     title="Copy link"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                    </svg>
+                    <CopyIcon />
+                    {copied ? "Copied!" : "Copy"}
                   </button>
                 </div>
               )}
 
-              {/* Upload next revision button — shown when all tasks resolved */}
-              {canUploadNext && (
+              {/* Upload next revision — only when all tasks resolved */}
+              {canUploadRevision && (
                 <CldUploadWidget
                   uploadPreset={uploadPreset}
                   options={uploadOptions}
@@ -564,33 +614,37 @@ export default function EditorView({
                       onClick={() => open()}
                       style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/><polyline points="16 6 12 2 8 6"/>
-                        <line x1="12" y1="2" x2="12" y2="14"/>
-                      </svg>
+                      <UploadIcon />
                       Upload revision {currentRevision + 1}
                     </button>
                   )}
                 </CldUploadWidget>
               )}
 
-              {/* Max revisions reached notice */}
+              {/* Waiting on client feedback */}
+              {project.mediaUrl && !canUploadRevision && totalTasks > 0 && !allResolved && (
+                <span style={{
+                  fontSize: "var(--text-xs)", color: "var(--color-text-muted)", fontStyle: "italic",
+                  display: "flex", alignItems: "center", gap: "var(--space-2)",
+                }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  Resolve all tasks to unlock next upload
+                </span>
+              )}
+
+              {/* Max revisions reached */}
               {project.mediaUrl && revisionsLeft <= 0 && (
                 <span className="badge badge--unresolved" style={{ padding: "var(--space-2) var(--space-4)" }}>
                   Max revisions reached
                 </span>
               )}
-
-              {project.mediaUrl && revisionsLeft > 0 && !canUploadNext && allResolved && totalTasks === 0 && (
-                <span className="badge badge--delivered" style={{ padding: "var(--space-2) var(--space-4)" }}>
-                  v{currentRevision} uploaded ✓
-                </span>
-              )}
             </div>
           </div>
 
-          {/* -- Right: panel -- */}
-          <aside>
+          {/* -- Right sidebar -- */}
+          <aside style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)", minWidth: 0 }}>
             {!project.mediaUrl ? (
               isImage ? (
                 <RevisionChecklist
@@ -606,11 +660,9 @@ export default function EditorView({
                 />
               )
             ) : (
-              /* After media uploaded: show annotation todo list */
               <AnnotationTodo
                 annotations={currentAnnotations}
                 onToggleResolved={handleToggleResolved}
-                onAllDone={() => {}}
               />
             )}
           </aside>
