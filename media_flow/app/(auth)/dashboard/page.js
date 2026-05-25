@@ -147,24 +147,29 @@ export default function DashboardPage() {
   };
 
   const handleMediaUploaded = async (url) => {
-    if (!selectedProject) return;
-    // Revision is NOT bumped here — it increments when the CLIENT submits feedback.
-    // This upload just delivers the new media and unlocks the client for the current round.
-    await updateDoc(doc(db, "projects", selectedProject.id), {
-      mediaUrl: url,
-      status:   "In Review",
-    });
-    // Sync the client token so client sees new media and can annotate again
-    if (selectedProject.clientToken) {
-      try {
-        await updateDoc(doc(db, "tokens", selectedProject.clientToken), {
-          mediaUrl:          url,
-          clientSubmittedAt: null,   // unlock annotations
-        });
-      } catch (e) { console.error("Token sync failed:", e); }
-    }
-    setView("dashboard");
-  };
+  if (!selectedProject) return;
+  
+  // IMPORTANT: Bump the revision counter when uploading new media
+  const newRevision = (selectedProject.currentRevision ?? 0) + 1;
+  
+  await updateDoc(doc(db, "projects", selectedProject.id), {
+    mediaUrl: url,
+    status:   "In Review",
+    currentRevision: newRevision,  // ← ADD THIS LINE
+  });
+  
+  // Sync the client token so client sees new media and can annotate again
+  if (selectedProject.clientToken) {
+    try {
+      await updateDoc(doc(db, "tokens", selectedProject.clientToken), {
+        mediaUrl:          url,
+        clientSubmittedAt: null,   // unlock annotations
+        currentRevision:   newRevision,  // ← ADD THIS LINE TOO
+      });
+    } catch (e) { console.error("Token sync failed:", e); }
+  }
+  setView("dashboard");
+};
 
   const openProject = (project) => {
     setSelectedProject(project);

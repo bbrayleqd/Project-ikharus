@@ -375,9 +375,13 @@ export default function EditorView({
   };
 
   // --- Upload next revision (bumps counter, unlocks client) -----------------
-  const handleNextRevisionUploaded = (url) => {
-    onMediaUploaded(url);
-  };
+  const handleNextRevisionUploaded = async (url) => {
+  // Bump the revision immediately (will get synced from Firestore shortly)
+  setCurrentRevision(currentRevision + 1);
+  setAnnotations([]); // Clear old annotations
+  // Then update the project in the database
+  onMediaUploaded(url);
+};
 
   const handleChecklistUpdate = (newProgress, updatedTasks) => {
     onProgressUpdate(newProgress, { tasks: updatedTasks });
@@ -670,7 +674,7 @@ export default function EditorView({
               />
             )}
           </aside>
-
+          
         </div>
       </main>
     </div>
