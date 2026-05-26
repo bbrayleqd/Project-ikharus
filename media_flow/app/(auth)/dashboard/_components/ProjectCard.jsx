@@ -172,20 +172,7 @@ export default function ProjectCard({ project, onClick, onEdit, onDelete }) {
           <MediaPlaceholder projectType={project.projectType} />
         )}
 
-        {/* Progress ring — bottom-right for less conflict with actions */}
-        <div className="project-card__progress">
-          <div style={{ position: "relative", width: 44, height: 44 }}>
-            <ProgressRing progress={project.progress} size={44} stroke={3} />
-            <span style={{
-              position: "absolute", inset: 0,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "10px", fontWeight: "var(--font-bold)",
-              color: "var(--color-text-primary)",
-            }}>
-              {project.progress}%
-            </span>
-          </div>
-        </div>
+        
 
         {/* Project type badge — top-left */}
         <div style={{
