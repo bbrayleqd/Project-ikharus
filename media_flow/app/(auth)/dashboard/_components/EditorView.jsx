@@ -489,9 +489,13 @@ export default function EditorView({
   }, [project.clientToken]);
 
   // Filter annotations by current revision
+  // Show annotations only if editor hasn't uploaded for this revision yet
+  const lastEditorUploadRevision = project.lastEditorUploadRevision ?? 0;
   const currentAnnotations = annotations.filter(
-    (a) => (a.revision ?? 1) === currentRevision
+    (a) => (a.revision ?? 1) === currentRevision 
+        && currentRevision > lastEditorUploadRevision
   );
+  
   const totalTasks    = currentAnnotations.length;
   const resolvedTasks = currentAnnotations.filter(a => a.resolved).length;
   const allResolved   = totalTasks > 0 && resolvedTasks === totalTasks;

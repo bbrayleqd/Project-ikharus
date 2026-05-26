@@ -309,31 +309,24 @@ export default function ClientReviewPage({ params }) {
     return () => unsub();
   }, [tokenData?.projectId]);
 
-  /* -- Current revision annotations (only this round) ------------------- */
-  const currentRevisionAnnotations = annotations.filter(
-    // annotations are saved at (currentRevision + 1) while annotating;
-    // after submit, currentRevision bumps to that value — filter stays consistent.
-    (a) => (a.revision ?? 1) === (submitted ? currentRevision : currentRevision + 1)
-  );
-
   /* -- Save annotation to Firestore ------------------------------------- */
-  const handleAnnotationSave = async (annotation) => {
-    if (!tokenData?.projectId || submitted || isFinal) return;
-    // Strip the locally-generated numeric id — Firestore will assign its own
-    // string document ID. Keeping the numeric id would overwrite the real doc
-    // ID when the snapshot is read back with { ...d.data(), id: d.id }.
-    // eslint-disable-next-line no-unused-vars
-    const { id: _localId, ...annotationData } = annotation;
-    await addDoc(
-      collection(db, "projects", tokenData.projectId, "annotations"),
-      {
-        ...annotationData,
-        token,
-        revision:  currentRevision + 1,  // round being annotated; bumps to this on submit
-        createdAt: serverTimestamp(),
-      }
-    );
-  };
+    const handleAnnotationSave = async (annotation) => {
+      if (!tokenData?.projectId || submitted || isFinal) return;
+
+      // ✅ Block if limit already reached
+      if (currentRevisionAnnotations.length >= maxRevisions) return;
+
+      const { id: _localId, ...annotationData } = annotation;
+      await addDoc(
+        collection(db, "projects", tokenData.projectId, "annotations"),
+        {
+          ...annotationData,
+          token,
+          revision:  activeRevision,
+          createdAt: serverTimestamp(),
+        }
+      );
+    };
 
   /* -- Submit all feedback ---------------------------------------------- */
   const handleSubmitConfirmed = async () => {
@@ -383,13 +376,21 @@ export default function ClientReviewPage({ params }) {
   };
 
   /* -- Derived ---------------------------------------------------------- */
+ 
   const maxRevisions   = projectData?.maxRevisions ?? tokenData?.maxRevisions ?? 3;
+  const activeRevision = (tokenData?.lastEditorUploadRevision ?? 0) + 1;
   // After submitting round N, currentRevision becomes N+1.
   // reachedMax when that next value exceeds the allowed maximum.
-  const reachedMax     = submitted && currentRevision > maxRevisions;
+  const reachedMax     = currentRevision > maxRevisions;
   // Use projectData.mediaUrl as source of truth (most up to date), fall back to token
   const mediaUrl       = projectData?.mediaUrl ?? tokenData?.mediaUrl ?? null;
-  const canAnnotate    = !!mediaUrl && !submitted && !isFinal && !reachedMax;
+  
+  const currentRevisionAnnotations = annotations.filter(
+    (a) => (a.revision ?? 1) === activeRevision
+  );
+
+  
+  const canAnnotate    = !!mediaUrl && !submitted && !isFinal && !reachedMax && currentRevisionAnnotations.length < maxRevisions;
   // Display: when actively annotating show the round they're ON (currentRevision + 1),
   // when submitted show the round they just completed (currentRevision).
   const displayRevision = submitted ? currentRevision : currentRevision + 1;

@@ -149,27 +149,30 @@ export default function DashboardPage() {
     });
   };
 
- const handleMediaUploaded = async (url) => {
-  if (!selectedProject) return;
+    const handleMediaUploaded = async (url) => {
+      if (!selectedProject) return;
+      const currentRevision = selectedProject.currentRevision ?? 0;
+      const maxRevisions = selectedProject.maxRevisions ?? 3;
+      const isAtMax = currentRevision >= maxRevisions; // ← check before writing
 
-  // DON'T increment revision here — client already did it on submit
-  await updateDoc(doc(db, "projects", selectedProject.id), {
-    mediaUrl: url,
-    status:   "In Review",
-    // ← REMOVE currentRevision: newRevision from here
-  });
-
-  if (selectedProject.clientToken) {
-    try {
-      await updateDoc(doc(db, "tokens", selectedProject.clientToken), {
-        mediaUrl:          url,
-        clientSubmittedAt: null,  // unlock annotations
-        // ← REMOVE currentRevision: newRevision from here too
+      await updateDoc(doc(db, "projects", selectedProject.id), {
+        mediaUrl: url,
+        status: "In Review",
+        lastEditorUploadRevision: currentRevision,
       });
-    } catch (e) { console.error("Token sync failed:", e); }
-  }
-  setView("dashboard");
-};
+
+      if (selectedProject.clientToken) {
+        try {
+          await updateDoc(doc(db, "tokens", selectedProject.clientToken), {
+            mediaUrl: url,
+            clientSubmittedAt: isAtMax ? serverTimestamp() : null, // ← keep locked if at max
+            lastEditorUploadRevision: currentRevision,
+            currentRevision: currentRevision,
+          });
+        } catch (e) { console.error("Token sync failed:", e); }
+      }
+      setView("dashboard");
+    };
 
   const openProject = (project) => {
     setSelectedProject(project);
