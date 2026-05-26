@@ -149,25 +149,22 @@ export default function DashboardPage() {
     });
   };
 
-  const handleMediaUploaded = async (url) => {
+ const handleMediaUploaded = async (url) => {
   if (!selectedProject) return;
-  
-  // IMPORTANT: Bump the revision counter when uploading new media
-  const newRevision = (selectedProject.currentRevision ?? 0) + 1;
-  
+
+  // DON'T increment revision here — client already did it on submit
   await updateDoc(doc(db, "projects", selectedProject.id), {
     mediaUrl: url,
     status:   "In Review",
-    currentRevision: newRevision,  // ← ADD THIS LINE
+    // ← REMOVE currentRevision: newRevision from here
   });
-  
-  // Sync the client token so client sees new media and can annotate again
+
   if (selectedProject.clientToken) {
     try {
       await updateDoc(doc(db, "tokens", selectedProject.clientToken), {
         mediaUrl:          url,
-        clientSubmittedAt: null,   // unlock annotations
-        currentRevision:   newRevision,  // ← ADD THIS LINE TOO
+        clientSubmittedAt: null,  // unlock annotations
+        // ← REMOVE currentRevision: newRevision from here too
       });
     } catch (e) { console.error("Token sync failed:", e); }
   }

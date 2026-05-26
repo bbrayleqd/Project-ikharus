@@ -563,9 +563,8 @@ export default function EditorView({
   };
 
   const handleNextRevisionUploaded = async (url) => {
-    setCurrentRevision(currentRevision + 1);
-    setAnnotations([]);
-    onMediaUploaded(url);
+    setAnnotations([]); // only clear annotations here
+    onMediaUploaded(url); // let the dashboard handle the revision bump
   };
 
   const handleChecklistUpdate = (newProgress, updatedTasks) => {
