@@ -134,7 +134,15 @@ export default function ImageViewer({ project, annotations = [] }) {
             ref={imgRef}
             src={project.mediaUrl}
             alt={project.name}
-            onLoad={() => setImgLoaded(true)}
+            onLoad={() => {
+              setImgLoaded(true);
+              // Force the container to recalculate scroll
+              if (imgRef.current) {
+                imgRef.current.closest('[data-scroll-container]')?.dispatchEvent(
+                  new Event('resize')
+                );
+              }
+            }}
             style={{
               width: "100%",
               display: "block",
