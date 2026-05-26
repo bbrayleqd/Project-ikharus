@@ -313,9 +313,6 @@ export default function ClientReviewPage({ params }) {
     const handleAnnotationSave = async (annotation) => {
       if (!tokenData?.projectId || submitted || isFinal) return;
 
-      // ✅ Block if limit already reached
-      if (currentRevisionAnnotations.length >= maxRevisions) return;
-
       const { id: _localId, ...annotationData } = annotation;
       await addDoc(
         collection(db, "projects", tokenData.projectId, "annotations"),
@@ -390,7 +387,7 @@ export default function ClientReviewPage({ params }) {
   );
 
   
-  const canAnnotate    = !!mediaUrl && !submitted && !isFinal && !reachedMax && currentRevisionAnnotations.length < maxRevisions;
+  const canAnnotate    = !!mediaUrl && !submitted && !isFinal && !reachedMax;
   // Display: when actively annotating show the round they're ON (currentRevision + 1),
   // when submitted show the round they just completed (currentRevision).
   const displayRevision = submitted ? currentRevision : currentRevision + 1;
