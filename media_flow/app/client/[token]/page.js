@@ -245,6 +245,7 @@ export default function ClientReviewPage({ params }) {
   const [showFinalModal,    setShowFinalModal]     = useState(false);
   const [isFinal,           setIsFinal]            = useState(false);
   const [currentRevision,   setCurrentRevision]    = useState(1);
+  const [downloading,       setDownloading]        = useState(false);
 
   /* -- Load token doc from Firestore ------------------------------------ */
   useEffect(() => {
@@ -363,13 +364,50 @@ export default function ClientReviewPage({ params }) {
   };
 
   /* -- Download --------------------------------------------------------- */
+  // Filename pattern: FINAL_{project}_{client}.{ext}
+  // - Spaces and unsafe characters in project/client names are replaced with `-`
+  // - Extension is taken from the original uploaded file so .mov stays .mov, etc.
+  // - We fetch the file as a blob and download from a blob URL. Cross-origin
+  //   <a download> on R2 ignores our filename and uses the R2 object key;
+  //   going through a blob makes the filename actually stick.
   const handleDownload = async () => {
-    if (!isFinal || !mediaUrl) return;
-    const link = document.createElement("a");
-    link.href = mediaUrl;
-    link.download = `${tokenData.projectName || "file"}_final`;
-    link.target = "_blank";
-    link.click();
+    if (!isFinal || !mediaUrl || downloading) return;
+
+    const sanitize = (s) =>
+      (s || "").trim().replace(/[^A-Za-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
+    const projectPart = sanitize(tokenData?.projectName) || "project";
+    const clientPart  = sanitize(tokenData?.client)      || "client";
+
+    // Extract extension from the URL path (strip any ?query first).
+    const path = mediaUrl.split("?")[0];
+    const m    = path.match(/\.([A-Za-z0-9]+)$/);
+    const ext  = m ? m[1].toLowerCase() : (isVideo ? "mp4" : "jpg");
+
+    const filename = `FINAL_${projectPart}_${clientPart}.${ext}`;
+
+    setDownloading(true);
+    let blobUrl = null;
+    try {
+      const res = await fetch(mediaUrl);
+      if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+      const blob = await res.blob();
+      blobUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error("Download failed:", err);
+      // Fallback: open the raw URL in a new tab so the client isn't stuck.
+      // The filename may not be ours, but at least they get the file.
+      window.open(mediaUrl, "_blank", "noopener,noreferrer");
+    } finally {
+      if (blobUrl) setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+      setDownloading(false);
+    }
   };
 
   /* -- Derived ---------------------------------------------------------- */
@@ -685,10 +723,17 @@ export default function ClientReviewPage({ params }) {
                     <button
                       className="btn btn--primary"
                       onClick={handleDownload}
-                      style={{ width: "100%", justifyContent: "center", background: "#10B981", borderColor: "#10B981", display: "flex", alignItems: "center", gap: "var(--space-2)" }}
+                      disabled={downloading}
+                      style={{
+                        width: "100%", justifyContent: "center",
+                        background: "#10B981", borderColor: "#10B981",
+                        display: "flex", alignItems: "center", gap: "var(--space-2)",
+                        opacity: downloading ? 0.7 : 1,
+                        cursor: downloading ? "wait" : "pointer",
+                      }}
                     >
                       <DownloadIcon />
-                      Download file
+                      {downloading ? "Preparing download…" : "Download file"}
                     </button>
                   </div>
 

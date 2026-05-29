@@ -159,13 +159,12 @@ export default function ProjectCard({ project, onClick, onEdit, onDelete }) {
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
           ) : (
-            <img
-              src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload/so_0/${
-                project.mediaUrl.split("/upload/")[1]?.replace(/\.[^.]+$/, ".jpg")
-              }`}
-              alt={`${project.name} thumbnail`}
+            <video
+              src={`${project.mediaUrl}#t=0.5`}
+              muted
+              playsInline
+              preload="metadata"
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              onError={(e) => { e.target.style.display = "none"; }}
             />
           )
         ) : (

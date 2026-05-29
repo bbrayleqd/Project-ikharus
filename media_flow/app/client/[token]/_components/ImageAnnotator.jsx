@@ -63,11 +63,19 @@ export default function ImageAnnotator({
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    const W = canvas.width;
+    const H = canvas.height;
+
     annotations.forEach((ann, i) => {
       const isActive = i === selected;
       if (ann.type === "ellipse") {
+        // Resolve coords: if normalized, scale by canvas; else legacy raw pixels.
+        const cx = ann._normalized ? ann.cx * W : ann.cx;
+        const cy = ann._normalized ? ann.cy * H : ann.cy;
+        const rx = ann._normalized ? ann.rx * W : ann.rx;
+        const ry = ann._normalized ? ann.ry * H : ann.ry;
         ctx.beginPath();
-        ctx.ellipse(ann.cx, ann.cy, ann.rx, ann.ry, 0, 0, 2 * Math.PI);
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, 2 * Math.PI);
         ctx.strokeStyle = isActive ? COLOR_ELLIPSE_ACTIVE : COLOR_ELLIPSE;
         ctx.lineWidth   = isActive ? STROKE + 1 : STROKE;
         ctx.setLineDash(isActive ? [6, 3] : []);
@@ -78,20 +86,22 @@ export default function ImageAnnotator({
         ctx.font = "bold 11px -apple-system, sans-serif";
         ctx.fillStyle = isActive ? COLOR_ELLIPSE_ACTIVE : COLOR_ELLIPSE;
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(i + 1, ann.cx, ann.cy);
+        ctx.fillText(i + 1, cx, cy);
       } else if (ann.type === "pin") {
+        const x = ann._normalized ? ann.x * W : ann.x;
+        const y = ann._normalized ? ann.y * H : ann.y;
         ctx.beginPath();
-        ctx.arc(ann.x, ann.y, PIN_RADIUS + 2, 0, 2 * Math.PI);
+        ctx.arc(x, y, PIN_RADIUS + 2, 0, 2 * Math.PI);
         ctx.fillStyle = isActive ? `rgba(10,132,255,0.2)` : `rgba(229,62,62,0.15)`;
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(ann.x, ann.y, PIN_RADIUS, 0, 2 * Math.PI);
+        ctx.arc(x, y, PIN_RADIUS, 0, 2 * Math.PI);
         ctx.fillStyle = isActive ? COLOR_PIN_ACTIVE : COLOR_PIN;
         ctx.fill();
         ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.stroke();
         ctx.font = "bold 9px -apple-system, sans-serif";
         ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(i + 1, ann.x, ann.y);
+        ctx.fillText(i + 1, x, y);
       }
     });
 
@@ -126,7 +136,9 @@ export default function ImageAnnotator({
     e.preventDefault();
     if (tool === "pin") {
       const pos = getPos(e);
-      setPendingData({ type: "pin", x: pos.x, y: pos.y });
+      const W = canvasRef.current.width;
+      const H = canvasRef.current.height;
+      setPendingData({ type: "pin", x: pos.x / W, y: pos.y / H, _normalized: true });
       setTool(null); return;
     }
     const pos = getPos(e);
@@ -148,23 +160,38 @@ export default function ImageAnnotator({
     const pos = getPos(e);
     const rx = Math.abs(pos.x - startPos.x) / 2;
     const ry = Math.abs(pos.y - startPos.y) / 2;
-    if (rx < 8 || ry < 8) { setCurrentRect(null); return; }
+    if (rx < 8 || ry < 8) { setCurrentRect(null); return; } // min size check still in px
     const cx = (startPos.x + pos.x) / 2;
     const cy = (startPos.y + pos.y) / 2;
-    setPendingData({ type: "ellipse", cx, cy, rx, ry });
+    const W = canvasRef.current.width;
+    const H = canvasRef.current.height;
+    setPendingData({
+      type: "ellipse",
+      cx: cx / W, cy: cy / H,
+      rx: rx / W, ry: ry / H,
+      _normalized: true,
+    });
     setCurrentRect(null); setTool(null);
   };
 
   const handleCanvasClick = (e) => {
     if (tool || drawing) return;
     const pos = getPos(e);
+    const W = canvasRef.current.width;
+    const H = canvasRef.current.height;
     let hit = -1;
     annotations.forEach((ann, i) => {
       if (ann.type === "ellipse") {
-        const dx = (pos.x - ann.cx) / ann.rx; const dy = (pos.y - ann.cy) / ann.ry;
+        const cx = ann._normalized ? ann.cx * W : ann.cx;
+        const cy = ann._normalized ? ann.cy * H : ann.cy;
+        const rx = ann._normalized ? ann.rx * W : ann.rx;
+        const ry = ann._normalized ? ann.ry * H : ann.ry;
+        const dx = (pos.x - cx) / rx; const dy = (pos.y - cy) / ry;
         if (dx * dx + dy * dy <= 1) hit = i;
       } else if (ann.type === "pin") {
-        const dx = pos.x - ann.x; const dy = pos.y - ann.y;
+        const x = ann._normalized ? ann.x * W : ann.x;
+        const y = ann._normalized ? ann.y * H : ann.y;
+        const dx = pos.x - x; const dy = pos.y - y;
         if (Math.sqrt(dx * dx + dy * dy) <= PIN_RADIUS + 4) hit = i;
       }
     });

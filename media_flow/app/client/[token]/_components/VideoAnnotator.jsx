@@ -82,28 +82,56 @@ export default function VideoAnnotator({
   const [rangeEnd,   setRangeEnd]   = useState(null);
   const [step,       setStep]       = useState("idle");
   const [selected,   setSelected]   = useState(null);
+  // We wait for `canplaythrough` — the browser's signal that it has buffered
+  // enough to reach the end at current download speed without stopping. The
+  // browser keeps fetching ahead as needed once playback starts, so scrubbing
+  // remains responsive. We can't force a full download via <video> alone;
+  // Chrome deliberately caps preload at ~30% to save bandwidth.
+  const [fullyLoaded, setFullyLoaded] = useState(false);
 
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    const onTime = () => setCurrentT(v.currentTime);
-    const onMeta = () => setDuration(v.duration);
-    const onEnd  = () => setPlaying(false);
+    const onTime  = () => setCurrentT(v.currentTime);
+    const onMeta  = () => setDuration(v.duration);
+    const onEnd   = () => setPlaying(false);
+    const onPlay  = () => setPlaying(true);   // element tells us
+    const onPause = () => setPlaying(false);  // no race
+    const onReady = () => setFullyLoaded(true); // buffered enough to play through
+
     v.addEventListener("timeupdate",     onTime);
     v.addEventListener("loadedmetadata", onMeta);
     v.addEventListener("ended",          onEnd);
+    v.addEventListener("play",           onPlay);
+    v.addEventListener("pause",          onPause);
+    v.addEventListener("canplaythrough", onReady);
     return () => {
       v.removeEventListener("timeupdate",     onTime);
       v.removeEventListener("loadedmetadata", onMeta);
       v.removeEventListener("ended",          onEnd);
+      v.removeEventListener("play",           onPlay);
+      v.removeEventListener("pause",          onPause);
+      v.removeEventListener("canplaythrough", onReady);
     };
   }, []);
 
+  // Reset load state when the URL changes (new revision uploaded).
+  useEffect(() => {
+    setFullyLoaded(false);
+  }, [videoUrl]);
+
   const togglePlay = () => {
+    if (!fullyLoaded) return; // wait until the file is fully buffered
     const v = videoRef.current;
     if (!v) return;
-    if (playing) { v.pause(); setPlaying(false); }
-    else         { v.play();  setPlaying(true);  }
+    if (v.paused) {
+      // play() rejects if a seek/pause interrupts it before it resolves.
+      // Catch it — purely cosmetic.
+      const p = v.play();
+      if (p?.catch) p.catch(() => {});
+    } else {
+      v.pause();
+    }
   };
 
   const seekTo = useCallback((secs) => {
@@ -113,6 +141,7 @@ export default function VideoAnnotator({
   }, [duration]);
 
   const handleTimelineClick = (e) => {
+    if (!fullyLoaded) return; // block seeks until fully buffered
     const rect = timelineRef.current.getBoundingClientRect();
     const pct  = (e.clientX - rect.left) / rect.width;
     const t    = pct * duration;
@@ -133,7 +162,7 @@ export default function VideoAnnotator({
   };
 
   const startMarking = (m) => {
-    if (locked) return;
+    if (locked || !fullyLoaded) return;
     const v = videoRef.current;
     if (v) v.pause();
     setPlaying(false);
@@ -175,8 +204,37 @@ export default function VideoAnnotator({
         <video
           ref={videoRef}
           src={videoUrl}
+          preload="auto"
+          playsInline
+          crossOrigin="anonymous"
           style={{ width: "100%", maxHeight: "60vh", objectFit: "contain", display: "block" }}
         />
+        {!fullyLoaded && (
+          <div style={{
+            position: "absolute", inset: 0, display: "flex",
+            flexDirection: "column", alignItems: "center", justifyContent: "center",
+            gap: "var(--space-4)",
+            background: "rgba(0,0,0,0.78)", color: "#fff",
+            pointerEvents: "none", padding: "var(--space-6)",
+          }}>
+            <div style={{
+              width: 56, height: 56,
+              border: "3px solid rgba(255,255,255,0.18)",
+              borderTopColor: "#fff",
+              borderRadius: "50%",
+              animation: "spin 0.9s linear infinite",
+            }} />
+            <div style={{ textAlign: "center", lineHeight: 1.55 }}>
+              <div style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-semibold)" }}>
+                Preparing video for smooth playback
+              </div>
+              <div style={{ fontSize: "var(--text-xs)", opacity: 0.7, marginTop: 2 }}>
+                Just a moment — buffering enough to scrub without stutters.
+              </div>
+            </div>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        )}
         {step === "marking" && (
           <div style={{
             position: "absolute", inset: 0, display: "flex",

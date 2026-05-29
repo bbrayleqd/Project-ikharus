@@ -155,6 +155,26 @@ export default function DashboardPage() {
       const maxRevisions = selectedProject.maxRevisions ?? 3;
       const isAtMax = currentRevision >= maxRevisions; // ← check before writing
 
+      // Delete the previous R2 file (if any) so the bucket stays tidy.
+      // We do this before the Firestore write so a successful delete is
+      // never followed by a failed Firestore update that leaves the URL
+      // pointing at a now-deleted file. If the delete fails, we still
+      // proceed with the update — better to have an orphaned old file
+      // than to lose the new one. Legacy non-R2 URLs are silently skipped
+      // by the API route.
+      const oldUrl = selectedProject.mediaUrl;
+      if (oldUrl && oldUrl !== url) {
+        try {
+          await fetch("/api/r2/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: oldUrl }),
+          });
+        } catch (e) {
+          console.warn("R2 cleanup failed (continuing with upload):", e);
+        }
+      }
+
       await updateDoc(doc(db, "projects", selectedProject.id), {
         mediaUrl: url,
         status: "In Review",

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect }  from "react";
-import { CldUploadWidget }      from "next-cloudinary";
+import R2Upload                 from "./R2Upload";
 import { UserButton }           from "@clerk/nextjs";
 import { useTheme }             from "../../../theme-provider";
 
@@ -575,10 +575,7 @@ export default function EditorView({
     onProgressUpdate(newProgress, { tasks: updatedTasks });
   };
 
-  const uploadPreset  = "mediaflow_unsigned";
-  const uploadOptions = isImage
-    ? { resourceType: "image", clientAllowedFormats: ["jpg", "jpeg", "png", "webp"] }
-    : { resourceType: "video", clientAllowedFormats: ["mp4", "mov"] };
+  const uploadKind = isImage ? "image" : "video";
 
   const reviewUrl = token ? `${typeof window !== "undefined" ? window.location.origin : ""}/client/${token}` : null;
   const revisionLabel = `${currentRevision} of ${maxRevisions}`;
@@ -660,21 +657,22 @@ export default function EditorView({
             <div className="card" style={{ padding: 0, overflow: "hidden" }}>
               {!project.mediaUrl ? (
                 isReadyToUpload ? (
-                  <CldUploadWidget
-                    uploadPreset={uploadPreset}
-                    options={uploadOptions}
-                    onSuccess={(res) => handleFirstUpload(res.info.secure_url)}
+                  <R2Upload
+                    kind={uploadKind}
+                    projectId={project.id}
+                    onSuccess={handleFirstUpload}
                   >
-                    {({ open }) => (
+                    {({ open, uploading, progress, error }) => (
                       <button
-                        onClick={() => open()}
+                        onClick={open}
+                        disabled={uploading}
                         style={{
                           width: "100%", minHeight: "55vh",
                           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                           gap: "var(--space-4)",
                           background: isImage ? "rgba(124,58,237,0.07)" : "var(--color-primary-glow)",
                           border: `2px dashed ${isImage ? "#7C3AED" : "var(--color-primary)"}`,
-                          borderRadius: "var(--radius-xl)", cursor: "pointer",
+                          borderRadius: "var(--radius-xl)", cursor: uploading ? "wait" : "pointer",
                           transition: "background var(--transition-fast)",
                         }}
                       >
@@ -687,15 +685,15 @@ export default function EditorView({
                         </div>
                         <div style={{ textAlign: "center" }}>
                           <p style={{ fontWeight: "var(--font-semibold)", color: isImage ? "#7C3AED" : "var(--color-primary)", fontSize: "var(--text-lg)" }}>
-                            Upload first {isImage ? "image" : "draft"}
+                            {uploading ? `Uploading… ${progress}%` : `Upload first ${isImage ? "image" : "draft"}`}
                           </p>
-                          <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
-                            {isImage ? "JPG, PNG, WEBP supported" : "MP4, MOV supported"}
+                          <p style={{ fontSize: "var(--text-sm)", color: error ? "#E53E3E" : "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
+                            {error ? error : (isImage ? "JPG, PNG, WEBP supported" : "MP4, MOV supported")}
                           </p>
                         </div>
                       </button>
                     )}
-                  </CldUploadWidget>
+                  </R2Upload>
                 ) : (
                   <div style={{
                     width: "100%", minHeight: "55vh", display: "flex", flexDirection: "column",
@@ -795,22 +793,25 @@ export default function EditorView({
 
               {/* Upload next revision */}
               {canUploadRevision && (
-                <CldUploadWidget
-                  uploadPreset={uploadPreset}
-                  options={uploadOptions}
-                  onSuccess={(res) => handleNextRevisionUploaded(res.info.secure_url)}
+                <R2Upload
+                  kind={uploadKind}
+                  projectId={project.id}
+                  onSuccess={handleNextRevisionUploaded}
                 >
-                  {({ open }) => (
+                  {({ open, uploading, progress }) => (
                     <button
                       className="btn btn--primary"
-                      onClick={() => open()}
+                      onClick={open}
+                      disabled={uploading}
                       style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}
                     >
                       <UploadIcon />
-                      {currentRevision >= maxRevisions ? "Upload final delivery" : `Upload revision ${currentRevision + 1}`}
+                      {uploading
+                        ? `Uploading… ${progress}%`
+                        : currentRevision >= maxRevisions ? "Upload final delivery" : `Upload revision ${currentRevision + 1}`}
                     </button>
                   )}
-                </CldUploadWidget>
+                </R2Upload>
               )}
 
               {/* Waiting on client feedback */}

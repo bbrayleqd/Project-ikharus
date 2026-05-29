@@ -58,16 +58,22 @@ export default function VideoViewer({ project, annotations = [] }) {
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    const onTime = () => setCurrentT(v.currentTime);
-    const onMeta = () => setDuration(v.duration);
-    const onEnd  = () => setPlaying(false);
+    const onTime  = () => setCurrentT(v.currentTime);
+    const onMeta  = () => setDuration(v.duration);
+    const onEnd   = () => setPlaying(false);
+    const onPlay  = () => setPlaying(true);   // let the element tell us
+    const onPause = () => setPlaying(false);  // (no guessing → no race)
     v.addEventListener("timeupdate",     onTime);
     v.addEventListener("loadedmetadata", onMeta);
     v.addEventListener("ended",          onEnd);
+    v.addEventListener("play",           onPlay);
+    v.addEventListener("pause",          onPause);
     return () => {
       v.removeEventListener("timeupdate",     onTime);
       v.removeEventListener("loadedmetadata", onMeta);
       v.removeEventListener("ended",          onEnd);
+      v.removeEventListener("play",           onPlay);
+      v.removeEventListener("pause",          onPause);
     };
   }, []);
 
@@ -80,8 +86,14 @@ export default function VideoViewer({ project, annotations = [] }) {
   const togglePlay = () => {
     const v = videoRef.current;
     if (!v) return;
-    if (playing) { v.pause(); setPlaying(false); }
-    else         { v.play();  setPlaying(true);  }
+    if (v.paused) {
+      // play() returns a Promise that rejects with AbortError if a seek or
+      // pause happens before it resolves. Catch and ignore — purely cosmetic.
+      const p = v.play();
+      if (p?.catch) p.catch(() => {});
+    } else {
+      v.pause();
+    }
   };
 
   /* -- Timeline click → seek -------------------------------- */
@@ -118,6 +130,9 @@ export default function VideoViewer({ project, annotations = [] }) {
         <video
           ref={videoRef}
           src={project.mediaUrl}
+          preload="metadata"
+          playsInline
+          crossOrigin="anonymous"
           style={{
             width:     "100%",
             objectFit: "contain",
